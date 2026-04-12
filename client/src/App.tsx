@@ -1,5 +1,11 @@
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 
+import { AdminLayout } from "@/admin/components/AdminLayout";
+import { AdminRoute } from "@/admin/components/AdminRoute";
+import { AdminBookings } from "@/admin/pages/AdminBookings";
+import { AdminCenters } from "@/admin/pages/AdminCenters";
+import { AdminDashboard } from "@/admin/pages/AdminDashboard";
+import { AdminUsers } from "@/admin/pages/AdminUsers";
 import { Layout } from "@/components/layout/Layout";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Booking } from "@/pages/Booking";
@@ -29,6 +35,16 @@ export default function App() {
             element={<Booking />}
           />
           <Route path="home-booking" element={<HomeBooking />} />
+        </Route>
+      </Route>
+
+      <Route path="admin" element={<AdminRoute />}>
+        <Route element={<AdminLayout />}>
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="centers" element={<AdminCenters />} />
+          <Route path="bookings" element={<AdminBookings />} />
+          <Route path="users" element={<AdminUsers />} />
         </Route>
       </Route>
     </Routes>

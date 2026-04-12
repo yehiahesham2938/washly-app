@@ -21,7 +21,8 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
-import { getService } from "@/data/washCenters";
+import { useCenters } from "@/contexts/CentersContext";
+import { getServiceFromStores } from "@/lib/centerQueries";
 import { getTimeSlots } from "@/lib/timeSlots";
 import { totalPrice, vehicleSurcharge } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
@@ -31,11 +32,12 @@ export function Booking() {
   const { centerId, serviceId } = useParams();
   const navigate = useNavigate();
   const { addBooking } = useAuth();
+  const { centers } = useCenters();
 
   const resolved = useMemo(() => {
     if (!centerId || !serviceId) return undefined;
-    return getService(centerId, serviceId);
-  }, [centerId, serviceId]);
+    return getServiceFromStores(centers, centerId, serviceId);
+  }, [centers, centerId, serviceId]);
 
   const [date, setDate] = useState<Date | undefined>(() => {
     const d = new Date();

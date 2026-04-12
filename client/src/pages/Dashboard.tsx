@@ -9,7 +9,7 @@ import type { Booking } from "@/types";
 
 function statusVariant(
   s: Booking["status"]
-): "default" | "success" | "warning" | "secondary" {
+): "default" | "success" | "warning" | "secondary" | "destructive" {
   switch (s) {
     case "Confirmed":
       return "default";
@@ -17,6 +17,8 @@ function statusVariant(
       return "success";
     case "Pending":
       return "warning";
+    case "Cancelled":
+      return "destructive";
     default:
       return "secondary";
   }

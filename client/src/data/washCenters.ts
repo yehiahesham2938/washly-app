@@ -1,4 +1,4 @@
-import type { Service, WashCenter } from "@/types";
+import type { WashCenter } from "@/types";
 
 export const washCenters: WashCenter[] = [
   {
@@ -291,23 +291,8 @@ export function centerMinPrice(center: WashCenter): number {
 /** Default home spotlight order (matches marketing layout) */
 const HOME_SPOTLIGHT_IDS = ["c1", "c2", "c3"] as const;
 
-export function getHomeSpotlightCenters(): WashCenter[] {
-  return HOME_SPOTLIGHT_IDS.map((id) => washCenters.find((c) => c.id === id)).filter(
+export function getHomeSpotlightCenters(centers: WashCenter[]): WashCenter[] {
+  return HOME_SPOTLIGHT_IDS.map((id) => centers.find((c) => c.id === id)).filter(
     (c): c is WashCenter => Boolean(c)
   );
-}
-
-export function getCenterById(id: string): WashCenter | undefined {
-  return washCenters.find((c) => c.id === id);
-}
-
-export function getService(
-  centerId: string,
-  serviceId: string
-): { center: WashCenter; service: Service } | undefined {
-  const center = getCenterById(centerId);
-  if (!center) return undefined;
-  const service = center.services.find((s) => s.id === serviceId);
-  if (!service) return undefined;
-  return { center, service };
 }

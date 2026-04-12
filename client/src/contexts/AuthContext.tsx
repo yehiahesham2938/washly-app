@@ -7,40 +7,36 @@ import {
   type ReactNode,
 } from "react";
 
-import type { Booking, User } from "@/types";
+import { legacyStatusToRecord, recordToBooking } from "@/lib/bookingMappers";
+import { newId } from "@/lib/id";
+import { KEYS, getData, setData } from "@/services/storage";
+import type { Booking, BookingRecord, User } from "@/types";
 
-const USERS_KEY = "washly_users";
-const BOOKINGS_KEY = "washly_bookings";
 const SESSION_KEY = "washly_session";
 
+function inferRole(email: string): User["role"] {
+  return email.trim().toLowerCase().endsWith("@admin.com") ? "admin" : "user";
+}
+
 function loadUsers(): User[] {
-  try {
-    const raw = localStorage.getItem(USERS_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as User[];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+  const raw =
+    getData<(User & { role?: User["role"] })[]>(KEYS.users) ?? [];
+  return raw.map((u) => ({
+    ...u,
+    role: u.role ?? inferRole(u.email),
+  }));
 }
 
 function saveUsers(users: User[]) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  setData(KEYS.users, users);
 }
 
-function loadBookings(): Booking[] {
-  try {
-    const raw = localStorage.getItem(BOOKINGS_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as Booking[];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+function loadBookingRecords(): BookingRecord[] {
+  return getData<BookingRecord[]>(KEYS.bookings) ?? [];
 }
 
-function saveBookings(bookings: Booking[]) {
-  localStorage.setItem(BOOKINGS_KEY, JSON.stringify(bookings));
+function saveBookingRecords(bookings: BookingRecord[]) {
+  setData(KEYS.bookings, bookings);
 }
 
 function loadSessionUserId(): string | null {
@@ -54,7 +50,9 @@ function saveSessionUserId(id: string | null) {
 
 type AuthContextValue = {
   user: User | null;
+  allUsers: User[];
   bookings: Booking[];
+  allBookingRecords: BookingRecord[];
   login: (email: string, password: string) => boolean;
   signup: (data: {
     name: string;
@@ -63,32 +61,40 @@ type AuthContextValue = {
     password: string;
   }) => boolean;
   logout: () => void;
-  addBooking: (booking: Omit<Booking, "id" | "createdAt" | "userId">) => Booking;
+  addBooking: (
+    booking: Omit<Booking, "id" | "createdAt" | "userId" | "status"> & {
+      status?: Booking["status"];
+    }
+  ) => Booking;
+  /** Replace all booking records (admin) */
+  setAllBookingRecords: (next: BookingRecord[]) => void;
+  /** Update users list (admin) */
+  setAllUsers: (next: User[]) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function newId() {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [users, setUsers] = useState<User[]>(() => loadUsers());
-  const [bookings, setBookings] = useState<Booking[]>(() => loadBookings());
+  const [bookingRecords, setBookingRecords] = useState<BookingRecord[]>(() =>
+    loadBookingRecords()
+  );
   const [sessionUserId, setSessionUserId] = useState<string | null>(() =>
     loadSessionUserId()
   );
 
   const user = useMemo(
-    () => (sessionUserId ? users.find((u) => u.id === sessionUserId) ?? null : null),
+    () =>
+      sessionUserId ? users.find((u) => u.id === sessionUserId) ?? null : null,
     [users, sessionUserId]
   );
 
-  const userBookings = useMemo(
-    () =>
-      user ? bookings.filter((b) => b.userId === user.id) : [],
-    [bookings, user]
-  );
+  const bookings = useMemo(() => {
+    if (!user) return [];
+    return bookingRecords
+      .filter((b) => b.userId === user.id)
+      .map(recordToBooking);
+  }, [bookingRecords, user]);
 
   const login = useCallback(
     (email: string, password: string) => {
@@ -120,6 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email,
         phone: data.phone.trim(),
         password: data.password,
+        role: inferRole(email),
       };
       const next = [...users, newUser];
       setUsers(next);
@@ -137,32 +144,74 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addBooking = useCallback(
-    (partial: Omit<Booking, "id" | "createdAt" | "userId">) => {
+    (
+      partial: Omit<Booking, "id" | "createdAt" | "userId" | "status"> & {
+        status?: Booking["status"];
+      }
+    ) => {
       if (!user) throw new Error("Not authenticated");
-      const booking: Booking = {
-        ...partial,
+      const statusLegacy = partial.status ?? "Confirmed";
+      const record: BookingRecord = {
         id: newId(),
         userId: user.id,
+        userEmail: user.email,
+        kind: partial.kind,
+        centerId: partial.centerId,
+        centerName: partial.centerName,
+        serviceId: partial.serviceId,
+        serviceName: partial.serviceName,
+        date: partial.date,
+        time: partial.time,
+        vehicle: partial.vehicle,
+        notes: partial.notes,
+        address: partial.address,
+        price: partial.price,
+        status: legacyStatusToRecord(statusLegacy),
         createdAt: new Date().toISOString(),
       };
-      const next = [...bookings, booking];
-      setBookings(next);
-      saveBookings(next);
-      return booking;
+      const next = [...bookingRecords, record];
+      setBookingRecords(next);
+      saveBookingRecords(next);
+      return recordToBooking(record);
     },
-    [bookings, user]
+    [bookingRecords, user]
   );
+
+  const setAllBookingRecords = useCallback((next: BookingRecord[]) => {
+    setBookingRecords(next);
+    saveBookingRecords(next);
+  }, []);
+
+  const setAllUsers = useCallback((next: User[]) => {
+    setUsers(next);
+    saveUsers(next);
+  }, []);
 
   const value = useMemo(
     () => ({
       user,
-      bookings: userBookings,
+      allUsers: users,
+      bookings,
+      allBookingRecords: bookingRecords,
       login,
       signup,
       logout,
       addBooking,
+      setAllBookingRecords,
+      setAllUsers,
     }),
-    [user, userBookings, login, signup, logout, addBooking]
+    [
+      user,
+      users,
+      bookings,
+      bookingRecords,
+      login,
+      signup,
+      logout,
+      addBooking,
+      setAllBookingRecords,
+      setAllUsers,
+    ]
   );
 
   return (

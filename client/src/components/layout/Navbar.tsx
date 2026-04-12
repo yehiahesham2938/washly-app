@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Droplets, LogOut, Menu, User, X } from "lucide-react";
+import { Droplets, LayoutDashboard, LogOut, Menu, User, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -71,6 +71,16 @@ export function Navbar() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                {user.role === "admin" && (
+                  <DropdownMenuItem asChild>
+                    <Link
+                      to="/admin/dashboard"
+                      className="flex cursor-pointer items-center gap-2"
+                    >
+                      <LayoutDashboard className="h-4 w-4" /> Admin
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem asChild>
                   <Link
                     to="/dashboard"
@@ -124,6 +134,15 @@ export function Navbar() {
           ))}
           {user ? (
             <>
+              {user.role === "admin" && (
+                <Link
+                  to="/admin/dashboard"
+                  onClick={() => setMobileOpen(false)}
+                  className="block py-2 text-sm font-medium text-muted-foreground hover:text-primary"
+                >
+                  Admin
+                </Link>
+              )}
               <Link
                 to="/dashboard"
                 onClick={() => setMobileOpen(false)}

@@ -10,7 +10,9 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { centerMinPrice, getCenterById } from "@/data/washCenters";
+import { useCenters } from "@/contexts/CentersContext";
+import { centerMinPrice } from "@/data/washCenters";
+import { findCenterById } from "@/lib/centerQueries";
 
 const QUICK_INFO_ITEMS = [
   "Professional Staff",
@@ -21,7 +23,8 @@ const QUICK_INFO_ITEMS = [
 
 export function CenterDetail() {
   const { id } = useParams();
-  const center = id ? getCenterById(id) : undefined;
+  const { centers } = useCenters();
+  const center = id ? findCenterById(centers, id) : undefined;
 
   if (!center) {
     return (

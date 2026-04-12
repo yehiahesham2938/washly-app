@@ -6,14 +6,16 @@ import { StarRating } from "@/components/StarRating";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { areas, centerMinPrice, washCenters } from "@/data/washCenters";
+import { useCenters } from "@/contexts/CentersContext";
+import { areas, centerMinPrice } from "@/data/washCenters";
 
 export function Centers() {
+  const { centers } = useCenters();
   const [q, setQ] = useState("");
   const [area, setArea] = useState<(typeof areas)[number]>("All");
 
   const filtered = useMemo(() => {
-    return washCenters.filter((c) => {
+    return centers.filter((c) => {
       const matchQ =
         !q.trim() ||
         c.name.toLowerCase().includes(q.toLowerCase()) ||
@@ -21,7 +23,7 @@ export function Centers() {
       const matchArea = area === "All" || c.area === area;
       return matchQ && matchArea;
     });
-  }, [q, area]);
+  }, [centers, q, area]);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">

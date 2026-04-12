@@ -14,19 +14,20 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { useCenters } from "@/contexts/CentersContext";
 import {
   areas,
   centerMinPrice,
   getHomeSpotlightCenters,
-  washCenters,
 } from "@/data/washCenters";
 
 export function Home() {
+  const { centers } = useCenters();
   const [q, setQ] = useState("");
   const [area, setArea] = useState<(typeof areas)[number]>("All");
 
   const filtered = useMemo(() => {
-    return washCenters.filter((c) => {
+    return centers.filter((c) => {
       const matchQ =
         !q.trim() ||
         c.name.toLowerCase().includes(q.toLowerCase()) ||
@@ -34,7 +35,7 @@ export function Home() {
       const matchArea = area === "All" || c.area === area;
       return matchQ && matchArea;
     });
-  }, [q, area]);
+  }, [centers, q, area]);
 
   const topRated = useMemo(() => {
     const hasFilter = Boolean(q.trim()) || area !== "All";
@@ -46,8 +47,8 @@ export function Home() {
         })
         .slice(0, 3);
     }
-    return getHomeSpotlightCenters();
-  }, [filtered, q, area]);
+    return getHomeSpotlightCenters(centers);
+  }, [filtered, q, area, centers]);
 
   return (
     <div>
