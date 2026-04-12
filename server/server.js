@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
+const authRoutes = require('./routes/auth');
 
 dotenv.config();
 
@@ -14,6 +15,8 @@ app.use(express.json());
 app.get('/', (req, res) => {
   res.status(200).json({ message: 'Washly API is running' });
 });
+
+app.use('/api/auth', authRoutes);
 
 const startServer = async () => {
   try {
