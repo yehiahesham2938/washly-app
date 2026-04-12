@@ -67,12 +67,28 @@ export default {
           "0%": { strokeDashoffset: "24" },
           "100%": { strokeDashoffset: "0" },
         },
+        "washly-logo": {
+          "0%, 100%": { transform: "translateY(0) scale(1)" },
+          "45%": { transform: "translateY(-8px) scale(1.06)" },
+          "70%": { transform: "translateY(0) scale(1)" },
+        },
+        "washly-droplet": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.85" },
+        },
+        "washly-bar-slide": {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(400%)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "check-pop": "check-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
         "draw-check": "draw-check 0.45s ease-out 0.35s forwards",
+        "washly-logo": "washly-logo 2.2s ease-in-out infinite",
+        "washly-droplet": "washly-droplet 2.2s ease-in-out infinite",
+        "washly-bar-slide": "washly-bar-slide 1.25s ease-in-out infinite",
       },
       boxShadow: {
         card: "0 4px 24px -4px hsl(210 100% 45% / 0.12), 0 2px 8px -2px hsl(195 80% 45% / 0.08)",
