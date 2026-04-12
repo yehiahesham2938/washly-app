@@ -1,15 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
-import {
-  ArrowLeft,
-  Banknote,
-  CalendarIcon,
-  Car,
-  Check,
-  CreditCard,
-  MapPin,
-} from "lucide-react";
+import { ArrowLeft, CalendarIcon, Car, Check, MapPin } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +15,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -32,6 +23,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  PaymentMethodSection,
+  paymentLabelForNotes,
+  paymentMethodToApi,
+  type BookingPaymentMethod,
+  type PaymentMethodSectionHandle,
+} from "@/components/booking/PaymentMethodSection";
 import { useAuth } from "@/contexts/AuthContext";
 import { getTimeSlots } from "@/lib/timeSlots";
 import { totalPrice, vehicleSurcharge } from "@/lib/pricing";
@@ -48,7 +46,8 @@ export function HomeBooking() {
   const [selectedService, setSelectedService] = useState("");
   const [date, setDate] = useState<Date | undefined>();
   const [time, setTime] = useState("");
-  const [payment, setPayment] = useState("card");
+  const [payment, setPayment] = useState<BookingPaymentMethod>("card");
+  const paymentSectionRef = useRef<PaymentMethodSectionHandle>(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -86,7 +85,7 @@ export function HomeBooking() {
   function composeNotesForBooking(): string | undefined {
     const lines = [
       `Contact: ${name.trim()} · ${phone.trim()}`,
-      `Payment: ${payment === "card" ? "Credit card" : "Cash on arrival"}`,
+      `Payment: ${paymentLabelForNotes(payment, { cashLabel: "Cash on Arrival" })}`,
       notes.trim() || null,
     ].filter(Boolean) as string[];
     return lines.length ? lines.join("\n\n") : undefined;
@@ -106,6 +105,9 @@ export function HomeBooking() {
       toast.error("Please fill in all fields");
       return;
     }
+    if (!paymentSectionRef.current?.validateMockInputs()) {
+      return;
+    }
     try {
       const booking = await addBooking({
         kind: "home",
@@ -119,6 +121,9 @@ export function HomeBooking() {
         address: address.trim(),
         price,
         status: "Pending",
+        paymentMethod: paymentMethodToApi(payment),
+        contactName: name.trim(),
+        contactPhone: phone.trim(),
       });
       navigate("/confirmation", { state: { booking } });
     } catch {
@@ -354,41 +359,13 @@ export function HomeBooking() {
           </CardContent>
         </Card>
 
-        {/* Payment */}
-        <Card className="card-shadow">
-          <CardContent className="space-y-4 p-5">
-            <h3 className="font-semibold text-card-foreground">
-              Payment Method
-            </h3>
-            <RadioGroup
-              value={payment}
-              onValueChange={setPayment}
-              className="grid gap-3 sm:grid-cols-2"
-            >
-              {(
-                [
-                  { val: "card", label: "Credit Card", icon: CreditCard },
-                  { val: "cash", label: "Cash on Arrival", icon: Banknote },
-                ] as const
-              ).map((p) => (
-                <Label
-                  key={p.val}
-                  htmlFor={`home-${p.val}`}
-                  className={cn(
-                    "flex cursor-pointer items-center gap-3 rounded-lg border p-4 transition-colors",
-                    payment === p.val
-                      ? "border-primary bg-accent"
-                      : "border-border hover:bg-muted"
-                  )}
-                >
-                  <RadioGroupItem value={p.val} id={`home-${p.val}`} />
-                  <p.icon className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">{p.label}</span>
-                </Label>
-              ))}
-            </RadioGroup>
-          </CardContent>
-        </Card>
+        <PaymentMethodSection
+          ref={paymentSectionRef}
+          idPrefix="home-booking"
+          payment={payment}
+          onPaymentChange={setPayment}
+          cashLabel="Cash on Arrival"
+        />
 
         <Button type="submit" size="lg" className="w-full">
           Schedule Home Wash — ${price}

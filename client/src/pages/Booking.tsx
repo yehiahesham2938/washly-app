@@ -1,13 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { format, isBefore, startOfDay } from "date-fns";
-import {
-  ArrowLeft,
-  Banknote,
-  CalendarIcon,
-  CreditCard,
-  MapPin,
-} from "lucide-react";
+import { ArrowLeft, CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -20,7 +14,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -29,6 +22,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  PaymentMethodSection,
+  paymentLabelForNotes,
+  paymentMethodToApi,
+  type BookingPaymentMethod,
+  type PaymentMethodSectionHandle,
+} from "@/components/booking/PaymentMethodSection";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCenters } from "@/contexts/CentersContext";
 import { getServiceFromStores } from "@/lib/centerQueries";
@@ -55,10 +55,10 @@ export function Booking() {
   const [calendarMonth, setCalendarMonth] = useState(() => new Date());
   const [date, setDate] = useState<Date | undefined>();
   const [time, setTime] = useState("");
-  const [payment, setPayment] = useState("card");
+  const [payment, setPayment] = useState<BookingPaymentMethod>("card");
+  const paymentSectionRef = useRef<PaymentMethodSectionHandle>(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
   const [vehicle, setVehicle] = useState<VehicleType>("Sedan");
   const [notes, setNotes] = useState("");
   const [occupiedTimes, setOccupiedTimes] = useState<string[]>([]);
@@ -131,7 +131,7 @@ export function Booking() {
   function composeNotesForBooking(): string | undefined {
     const lines = [
       `Contact: ${name.trim()} · ${phone.trim()}`,
-      `Payment: ${payment === "card" ? "Credit card" : "Cash"}`,
+      `Payment: ${paymentLabelForNotes(payment)}`,
       notes.trim() || null,
     ].filter(Boolean) as string[];
     return lines.length ? lines.join("\n\n") : undefined;
@@ -143,7 +143,7 @@ export function Booking() {
       toast.error("Please sign in to confirm your booking");
       return;
     }
-    if (!name.trim() || !phone.trim() || !address.trim()) {
+    if (!name.trim() || !phone.trim()) {
       toast.error("Please complete all personal information fields");
       return;
     }
@@ -153,6 +153,9 @@ export function Booking() {
     }
     if (occupiedTimes.includes(time)) {
       toast.error("This time slot is no longer available");
+      return;
+    }
+    if (!paymentSectionRef.current?.validateMockInputs()) {
       return;
     }
     try {
@@ -166,10 +169,9 @@ export function Booking() {
         time,
         vehicle,
         notes: composeNotesForBooking(),
-        address: address.trim(),
         price,
         status: "Confirmed",
-        paymentMethod: payment === "card" ? "card" : "cash",
+        paymentMethod: paymentMethodToApi(payment),
         contactName: name.trim(),
         contactPhone: phone.trim(),
       });
@@ -258,22 +260,6 @@ export function Booking() {
                   aria-required
                 />
               </div>
-            </div>
-            <div>
-              <Label htmlFor="address" className="flex items-center gap-1.5">
-                <MapPin className="h-3.5 w-3.5" /> Your address{" "}
-                <span className="text-destructive">*</span>
-              </Label>
-              <Textarea
-                id="address"
-                placeholder="123 Main St, City, ZIP"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                className="mt-1"
-                rows={2}
-                required
-                aria-required
-              />
             </div>
           </CardContent>
         </Card>
@@ -378,41 +364,12 @@ export function Booking() {
           </CardContent>
         </Card>
 
-        {/* Payment */}
-        <Card className="card-shadow">
-          <CardContent className="space-y-4 p-5">
-            <h3 className="font-semibold text-card-foreground">
-              Payment Method
-            </h3>
-            <RadioGroup
-              value={payment}
-              onValueChange={setPayment}
-              className="grid gap-3 sm:grid-cols-2"
-            >
-              {(
-                [
-                  { val: "card", label: "Credit Card", icon: CreditCard },
-                  { val: "cash", label: "Cash", icon: Banknote },
-                ] as const
-              ).map((p) => (
-                <Label
-                  key={p.val}
-                  htmlFor={`booking-pay-${p.val}`}
-                  className={cn(
-                    "flex cursor-pointer items-center gap-3 rounded-lg border p-4 transition-colors",
-                    payment === p.val
-                      ? "border-primary bg-accent"
-                      : "border-border hover:bg-muted"
-                  )}
-                >
-                  <RadioGroupItem value={p.val} id={`booking-pay-${p.val}`} />
-                  <p.icon className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">{p.label}</span>
-                </Label>
-              ))}
-            </RadioGroup>
-          </CardContent>
-        </Card>
+        <PaymentMethodSection
+          ref={paymentSectionRef}
+          idPrefix="center-booking"
+          payment={payment}
+          onPaymentChange={setPayment}
+        />
 
         <Button type="submit" size="lg" className="w-full">
           Confirm Booking — ${price}

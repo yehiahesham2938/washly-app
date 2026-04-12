@@ -20,10 +20,11 @@ import {
   getStoredToken,
   login as loginApi,
   patchBookingStatus,
+  patchUserRole as apiPatchUserRole,
   persistSession,
 } from "@/services/api";
 import { recordToBooking } from "@/lib/bookingMappers";
-import type { Booking, BookingRecord, User } from "@/types";
+import type { Booking, BookingRecord, User, UserRole } from "@/types";
 
 type AuthContextValue = {
   authReady: boolean;
@@ -39,7 +40,7 @@ type AuthContextValue = {
   addBooking: (
     booking: Omit<Booking, "id" | "createdAt" | "userId" | "status"> & {
       status?: Booking["status"];
-      paymentMethod?: "card" | "cash";
+      paymentMethod?: "card" | "cash" | "wallet";
       contactName?: string;
       contactPhone?: string;
     }
@@ -47,6 +48,7 @@ type AuthContextValue = {
   updateBookingStatus: (id: string, status: BookingRecord["status"]) => Promise<void>;
   deleteBookingRecord: (id: string) => Promise<void>;
   deleteUserById: (id: string) => Promise<void>;
+  updateUserRoleById: (id: string, role: UserRole) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -174,7 +176,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (
       partial: Omit<Booking, "id" | "createdAt" | "userId" | "status"> & {
         status?: Booking["status"];
-        paymentMethod?: "card" | "cash";
+        paymentMethod?: "card" | "cash" | "wallet";
         contactName?: string;
         contactPhone?: string;
       }
@@ -235,6 +237,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAllUsers((prev) => prev.filter((u) => u.id !== id));
   }, []);
 
+  const updateUserRoleById = useCallback(async (id: string, role: UserRole) => {
+    const updated = await apiPatchUserRole(id, role);
+    setAllUsers((prev) =>
+      prev.map((u) => (u.id === id ? { ...u, ...updated } : u))
+    );
+    setUser((me) => (me?.id === id ? { ...me, ...updated } : me));
+  }, []);
+
   const value = useMemo(
     () => ({
       authReady,
@@ -251,6 +261,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       updateBookingStatus,
       deleteBookingRecord,
       deleteUserById,
+      updateUserRoleById,
     }),
     [
       authReady,
@@ -267,6 +278,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       updateBookingStatus,
       deleteBookingRecord,
       deleteUserById,
+      updateUserRoleById,
     ]
   );
 
