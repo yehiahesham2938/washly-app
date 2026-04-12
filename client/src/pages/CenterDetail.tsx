@@ -38,12 +38,18 @@ export function CenterDetail() {
   }
 
   const minPrice = centerMinPrice(center);
-  const locationText = center.locationLine ?? center.address;
-  const hoursLabel = center.hoursShort ?? center.hours;
+  const locationText = center.locationLine ?? center.address ?? "";
+  const hoursLabel = center.hoursShort ?? center.hours ?? "";
   const blurb =
     center.description ??
     "Premium car wash & detailing with professional staff and modern equipment.";
-  const telHref = `tel:${center.phone.replace(/[^\d+]/g, "")}`;
+  const phoneDisplay = center.phone?.trim() ?? "";
+  const telHref = phoneDisplay
+    ? `tel:${phoneDisplay.replace(/[^\d+]/g, "")}`
+    : "";
+  const rating = center.rating ?? 0;
+  const reviewCount = center.reviewCount ?? 0;
+  const services = center.services ?? [];
 
   return (
     <div className="bg-background pb-16">
@@ -59,11 +65,17 @@ export function CenterDetail() {
           <div
             className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-[0_8px_30px_rgba(0,0,0,0.06)]"
           >
-            <img
-              src={center.image}
-              alt=""
-              className="aspect-[16/10] h-full w-full object-cover lg:min-h-[320px]"
-            />
+            {center.image?.trim() ? (
+              <img
+                src={center.image}
+                alt=""
+                className="aspect-[16/10] h-full w-full object-cover lg:min-h-[320px]"
+              />
+            ) : (
+              <div className="flex aspect-[16/10] min-h-[200px] w-full items-center justify-center bg-muted text-sm text-muted-foreground lg:min-h-[320px]">
+                No image
+              </div>
+            )}
           </div>
 
           <Card className="flex flex-col rounded-xl border-border/60 shadow-[0_8px_30px_rgba(0,0,0,0.06)]">
@@ -105,9 +117,9 @@ export function CenterDetail() {
                 aria-hidden
               />
               <span className="font-medium text-foreground">
-                {center.rating.toFixed(1)}
+                {rating.toFixed(1)}
               </span>
-              <span>({center.reviewCount} reviews)</span>
+              <span>({reviewCount} reviews)</span>
             </span>
             <span className="inline-flex items-center gap-1.5">
               <MapPin className="h-4 w-4 shrink-0 text-primary" />
@@ -119,9 +131,13 @@ export function CenterDetail() {
             </span>
             <span className="inline-flex items-center gap-1.5">
               <Phone className="h-4 w-4 shrink-0 text-primary" />
-              <a href={telHref} className="hover:text-primary hover:underline">
-                {center.phone}
-              </a>
+              {telHref ? (
+                <a href={telHref} className="hover:text-primary hover:underline">
+                  {phoneDisplay}
+                </a>
+              ) : (
+                <span className="text-muted-foreground">Phone not listed</span>
+              )}
             </span>
           </div>
 
@@ -134,9 +150,9 @@ export function CenterDetail() {
           Available Services
         </h2>
         <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {center.services.map((s) => (
+          {services.map((s, index) => (
             <Card
-              key={s.id}
+              key={`${center.id}-svc-${s.id ?? index}-${index}`}
               className="flex flex-col rounded-xl border-border/60 shadow-[0_8px_30px_rgba(0,0,0,0.04)]"
             >
               <CardHeader className="pb-2">

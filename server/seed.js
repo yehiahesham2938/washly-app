@@ -177,10 +177,13 @@ const carWashSeedData = [
     rating: 4.6,
     reviewCount: 142,
     area: 'Northside',
+    locationLine: 'Northside, Summit Ave',
     address: '210 Summit Ave, Northside',
     phone: '(555) 555-2210',
     hours: 'Tue–Sun: 10:00 AM – 6:00 PM',
-    description: '',
+    hoursShort: '10:00 AM – 6:00 PM',
+    description:
+      'Hand-finished washes for delicate paint, SUVs, and pet-hair cleanup with Northside parking.',
     services: [
       {
         id: 'c4-s1',
@@ -214,10 +217,13 @@ const carWashSeedData = [
     rating: 4.9,
     reviewCount: 401,
     area: 'East End',
+    locationLine: 'East End, Greenway Blvd',
     address: '77 Greenway Blvd, East End',
     phone: '(555) 678-3344',
     hours: 'Mon–Sun: 8:00 AM – 8:00 PM',
-    description: '',
+    hoursShort: '8:00 AM – 8:00 PM',
+    description:
+      'Low-water biodegradable wash, glass & trim care, and ozone odor treatment.',
     services: [
       {
         id: 'c5-s1',
@@ -258,10 +264,13 @@ const carWashSeedData = [
     rating: 4.4,
     reviewCount: 520,
     area: 'Downtown',
+    locationLine: 'Downtown, Commerce Pl',
     address: '9 Commerce Pl, Downtown',
     phone: '(555) 900-7722',
     hours: 'Mon–Sun: 6:00 AM – 11:00 PM',
-    description: '',
+    hoursShort: '6:00 AM – 11:00 PM',
+    description:
+      'High-volume tunnel wash with underbody blast, wax spray, and monthly unlimited plans.',
     services: [
       {
         id: 'c6-s1',
@@ -295,10 +304,13 @@ const carWashSeedData = [
     rating: 4.8,
     reviewCount: 97,
     area: 'Suburbs',
+    locationLine: 'Suburbs, Cedar Court',
     address: '3 Cedar Court, Suburbs',
     phone: '(555) 111-4455',
     hours: 'Wed–Mon: 9:00 AM – 5:00 PM',
-    description: '',
+    hoursShort: '9:00 AM – 5:00 PM',
+    description:
+      'Family vans, third-row vacuuming, and lite paint correction for suburban commuters.',
     services: [
       {
         id: 'c7-s1',
@@ -332,7 +344,9 @@ const seed = async () => {
     await HomePackage.deleteMany({});
     console.log('Existing CarWash and HomePackage documents cleared');
 
-    await CarWash.insertMany(carWashSeedData);
+    for (const doc of carWashSeedData) {
+      await CarWash.create(doc);
+    }
     await HomePackage.insertMany(homePackageSeed);
 
     console.log(
