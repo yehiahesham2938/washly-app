@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { format } from "date-fns";
+import { format, isBefore, startOfDay } from "date-fns";
 import {
   ArrowLeft,
   Banknote,
@@ -33,6 +33,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCenters } from "@/contexts/CentersContext";
 import { getServiceFromStores } from "@/lib/centerQueries";
 import { getTimeSlots } from "@/lib/timeSlots";
+import {
+  fetchFullyBookedDates,
+  fetchOccupiedTimes,
+} from "@/services/api/bookings";
 import { totalPrice, vehicleSurcharge } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 import type { VehicleType } from "@/types";
@@ -48,6 +52,7 @@ export function Booking() {
     return getServiceFromStores(centers, centerId, serviceId);
   }, [centers, centerId, serviceId]);
 
+  const [calendarMonth, setCalendarMonth] = useState(() => new Date());
   const [date, setDate] = useState<Date | undefined>();
   const [time, setTime] = useState("");
   const [payment, setPayment] = useState("card");
@@ -56,8 +61,57 @@ export function Booking() {
   const [address, setAddress] = useState("");
   const [vehicle, setVehicle] = useState<VehicleType>("Sedan");
   const [notes, setNotes] = useState("");
+  const [occupiedTimes, setOccupiedTimes] = useState<string[]>([]);
+  const [fullyBookedDates, setFullyBookedDates] = useState<Set<string>>(
+    () => new Set()
+  );
 
   const timeSlots = useMemo(() => getTimeSlots(), []);
+
+  useEffect(() => {
+    if (!user) return;
+    setName(user.name ?? "");
+    setPhone(user.phone ?? "");
+  }, [user?.id, user?.name, user?.phone]);
+
+  useEffect(() => {
+    if (!centerId || !serviceId) return;
+    let cancelled = false;
+    const y = calendarMonth.getFullYear();
+    const m = calendarMonth.getMonth() + 1;
+    fetchFullyBookedDates({ centerId, serviceId, year: y, month: m })
+      .then(({ fullyBookedDates: list }) => {
+        if (!cancelled) setFullyBookedDates(new Set(list));
+      })
+      .catch(() => {
+        if (!cancelled) setFullyBookedDates(new Set());
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [centerId, serviceId, calendarMonth]);
+
+  useEffect(() => {
+    if (!centerId || !serviceId || !date) {
+      setOccupiedTimes([]);
+      return;
+    }
+    const ds = format(date, "yyyy-MM-dd");
+    let cancelled = false;
+    fetchOccupiedTimes({ centerId, serviceId, date: ds })
+      .then(({ occupiedTimes: taken }) => {
+        if (!cancelled) {
+          setOccupiedTimes(taken);
+          setTime((prev) => (prev && taken.includes(prev) ? "" : prev));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setOccupiedTimes([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [centerId, serviceId, date]);
 
   if (!resolved) {
     return (
@@ -77,13 +131,7 @@ export function Booking() {
   function composeNotesForBooking(): string | undefined {
     const lines = [
       `Contact: ${name.trim()} · ${phone.trim()}`,
-      `Payment: ${
-        payment === "card"
-          ? "Credit card"
-          : payment === "cash"
-            ? "Cash"
-            : "Digital wallet"
-      }`,
+      `Payment: ${payment === "card" ? "Credit card" : "Cash"}`,
       notes.trim() || null,
     ].filter(Boolean) as string[];
     return lines.length ? lines.join("\n\n") : undefined;
@@ -95,8 +143,16 @@ export function Booking() {
       toast.error("Please sign in to confirm your booking");
       return;
     }
-    if (!date || !time || !name.trim() || !phone.trim() || !address.trim()) {
-      toast.error("Please fill in all fields");
+    if (!name.trim() || !phone.trim() || !address.trim()) {
+      toast.error("Please complete all personal information fields");
+      return;
+    }
+    if (!date || !time) {
+      toast.error("Please select a date and time");
+      return;
+    }
+    if (occupiedTimes.includes(time)) {
+      toast.error("This time slot is no longer available");
       return;
     }
     try {
@@ -113,10 +169,17 @@ export function Booking() {
         address: address.trim(),
         price,
         status: "Confirmed",
+        paymentMethod: payment === "card" ? "card" : "cash",
+        contactName: name.trim(),
+        contactPhone: phone.trim(),
       });
       navigate("/confirmation", { state: { booking } });
-    } catch {
-      toast.error("Unable to save booking. Please try again.");
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Unable to save booking. Please try again."
+      );
     }
   }
 
@@ -165,29 +228,41 @@ export function Booking() {
             </h3>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <Label htmlFor="name">Full Name</Label>
+                <Label htmlFor="name">
+                  Full Name <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id="name"
                   placeholder="John Doe"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="mt-1"
+                  required
+                  autoComplete="name"
+                  aria-required
                 />
               </div>
               <div>
-                <Label htmlFor="phone">Phone Number</Label>
+                <Label htmlFor="phone">
+                  Phone Number <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id="phone"
+                  type="tel"
                   placeholder="+1 555-0100"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className="mt-1"
+                  required
+                  autoComplete="tel"
+                  aria-required
                 />
               </div>
             </div>
             <div>
               <Label htmlFor="address" className="flex items-center gap-1.5">
-                <MapPin className="h-3.5 w-3.5" /> Your address
+                <MapPin className="h-3.5 w-3.5" /> Your address{" "}
+                <span className="text-destructive">*</span>
               </Label>
               <Textarea
                 id="address"
@@ -196,6 +271,8 @@ export function Booking() {
                 onChange={(e) => setAddress(e.target.value)}
                 className="mt-1"
                 rows={2}
+                required
+                aria-required
               />
             </div>
           </CardContent>
@@ -226,11 +303,16 @@ export function Booking() {
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
+                    month={calendarMonth}
+                    onMonthChange={setCalendarMonth}
                     selected={date}
                     onSelect={setDate}
-                    disabled={(d) =>
-                      d < new Date(new Date().setHours(0, 0, 0, 0))
-                    }
+                    disabled={(d) => {
+                      const day = startOfDay(d);
+                      if (isBefore(day, startOfDay(new Date()))) return true;
+                      const ymd = format(d, "yyyy-MM-dd");
+                      return fullyBookedDates.has(ymd);
+                    }}
                     initialFocus
                     className="pointer-events-auto p-3"
                   />
@@ -240,17 +322,22 @@ export function Booking() {
             <div>
               <Label>Time Slot</Label>
               <div className="mt-2 flex flex-wrap gap-2">
-                {timeSlots.map((t) => (
-                  <Button
-                    key={t}
-                    type="button"
-                    size="sm"
-                    variant={time === t ? "default" : "outline"}
-                    onClick={() => setTime(t)}
-                  >
-                    {t}
-                  </Button>
-                ))}
+                {timeSlots.map((t) => {
+                  const taken = occupiedTimes.includes(t);
+                  return (
+                    <Button
+                      key={t}
+                      type="button"
+                      size="sm"
+                      variant={time === t ? "default" : "outline"}
+                      disabled={taken}
+                      title={taken ? "This slot is already booked" : undefined}
+                      onClick={() => setTime(t)}
+                    >
+                      {t}
+                    </Button>
+                  );
+                })}
               </div>
             </div>
           </CardContent>
@@ -300,13 +387,12 @@ export function Booking() {
             <RadioGroup
               value={payment}
               onValueChange={setPayment}
-              className="grid gap-3 sm:grid-cols-3"
+              className="grid gap-3 sm:grid-cols-2"
             >
               {(
                 [
                   { val: "card", label: "Credit Card", icon: CreditCard },
                   { val: "cash", label: "Cash", icon: Banknote },
-                  { val: "wallet", label: "Digital Wallet", icon: CreditCard },
                 ] as const
               ).map((p) => (
                 <Label

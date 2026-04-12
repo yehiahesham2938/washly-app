@@ -39,6 +39,9 @@ type AuthContextValue = {
   addBooking: (
     booking: Omit<Booking, "id" | "createdAt" | "userId" | "status"> & {
       status?: Booking["status"];
+      paymentMethod?: "card" | "cash";
+      contactName?: string;
+      contactPhone?: string;
     }
   ) => Promise<Booking>;
   updateBookingStatus: (id: string, status: BookingRecord["status"]) => Promise<void>;
@@ -171,6 +174,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (
       partial: Omit<Booking, "id" | "createdAt" | "userId" | "status"> & {
         status?: Booking["status"];
+        paymentMethod?: "card" | "cash";
+        contactName?: string;
+        contactPhone?: string;
       }
     ) => {
       if (!user) throw new Error("Not authenticated");
@@ -192,6 +198,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (partial.kind === "home" && partial.serviceId) {
         body.packageId = partial.serviceId;
       }
+      if (partial.paymentMethod) body.paymentMethod = partial.paymentMethod;
+      if (partial.contactName != null) body.contactName = partial.contactName;
+      if (partial.contactPhone != null) body.contactPhone = partial.contactPhone;
       const record = await apiCreateBooking(body);
       setBookingRecords((prev) => [record, ...prev]);
       if (user.role === "admin") {

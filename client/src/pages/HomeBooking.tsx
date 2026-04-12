@@ -86,13 +86,7 @@ export function HomeBooking() {
   function composeNotesForBooking(): string | undefined {
     const lines = [
       `Contact: ${name.trim()} · ${phone.trim()}`,
-      `Payment: ${
-        payment === "card"
-          ? "Credit card"
-          : payment === "cash"
-            ? "Cash on arrival"
-            : "Digital wallet"
-      }`,
+      `Payment: ${payment === "card" ? "Credit card" : "Cash on arrival"}`,
       notes.trim() || null,
     ].filter(Boolean) as string[];
     return lines.length ? lines.join("\n\n") : undefined;
@@ -369,13 +363,12 @@ export function HomeBooking() {
             <RadioGroup
               value={payment}
               onValueChange={setPayment}
-              className="grid gap-3 sm:grid-cols-3"
+              className="grid gap-3 sm:grid-cols-2"
             >
               {(
                 [
                   { val: "card", label: "Credit Card", icon: CreditCard },
                   { val: "cash", label: "Cash on Arrival", icon: Banknote },
-                  { val: "wallet", label: "Digital Wallet", icon: CreditCard },
                 ] as const
               ).map((p) => (
                 <Label

@@ -2,6 +2,36 @@ import type { BookingRecord } from "@/types";
 
 import { getJSON } from "./client";
 
+/** Non-cancelled bookings for this center + service + date (times are UI labels, e.g. "9:00 AM"). */
+export async function fetchOccupiedTimes(params: {
+  centerId: string;
+  serviceId: string;
+  date: string;
+}): Promise<{ occupiedTimes: string[] }> {
+  const q = new URLSearchParams({
+    centerId: params.centerId,
+    serviceId: params.serviceId,
+    date: params.date,
+  });
+  return getJSON(`/api/bookings/occupied-times?${q}`);
+}
+
+/** yyyy-MM-dd dates in that month where every slot is taken for this service. */
+export async function fetchFullyBookedDates(params: {
+  centerId: string;
+  serviceId: string;
+  year: number;
+  month: number;
+}): Promise<{ fullyBookedDates: string[] }> {
+  const q = new URLSearchParams({
+    centerId: params.centerId,
+    serviceId: params.serviceId,
+    year: String(params.year),
+    month: String(params.month),
+  });
+  return getJSON(`/api/bookings/fully-booked-dates?${q}`);
+}
+
 export async function fetchMyBookings(): Promise<BookingRecord[]> {
   return getJSON<BookingRecord[]>("/api/bookings/me");
 }
