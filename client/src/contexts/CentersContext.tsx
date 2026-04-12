@@ -8,40 +8,85 @@ import {
   type ReactNode,
 } from "react";
 
-import { KEYS, getData, setData } from "@/services/storage";
+import {
+  createCenter as apiCreateCenter,
+  deleteCenter as apiDeleteCenter,
+  fetchCenters,
+  updateCenter as apiUpdateCenter,
+} from "@/services/api/centers";
 import type { WashCenter } from "@/types";
 
 type CentersContextValue = {
   centers: WashCenter[];
-  setCenters: (next: WashCenter[]) => void;
-  refresh: () => void;
+  loading: boolean;
+  error: string | null;
+  refreshCenters: () => Promise<void>;
+  createCenter: (center: WashCenter) => Promise<void>;
+  updateCenter: (center: WashCenter) => Promise<void>;
+  deleteCenter: (id: string) => Promise<void>;
 };
 
 const CentersContext = createContext<CentersContextValue | null>(null);
 
 export function CentersProvider({ children }: { children: ReactNode }) {
-  const [centers, setCentersState] = useState<WashCenter[]>(
-    () => getData<WashCenter[]>(KEYS.centers) ?? []
-  );
+  const [centers, setCenters] = useState<WashCenter[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const refresh = useCallback(() => {
-    setCentersState(getData<WashCenter[]>(KEYS.centers) ?? []);
+  const refreshCenters = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const list = await fetchCenters();
+      setCenters(list);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load centers");
+      setCenters([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    const fn = () => refresh();
-    window.addEventListener("washly-storage", fn);
-    return () => window.removeEventListener("washly-storage", fn);
-  }, [refresh]);
+    refreshCenters();
+  }, [refreshCenters]);
 
-  const setCenters = useCallback((next: WashCenter[]) => {
-    setData(KEYS.centers, next);
-    setCentersState(next);
+  const createCenter = useCallback(async (center: WashCenter) => {
+    const created = await apiCreateCenter(center);
+    setCenters((prev) => [...prev, created]);
+  }, []);
+
+  const updateCenter = useCallback(async (center: WashCenter) => {
+    const updated = await apiUpdateCenter(center);
+    setCenters((prev) =>
+      prev.map((c) => (c.id === updated.id ? updated : c))
+    );
+  }, []);
+
+  const deleteCenter = useCallback(async (id: string) => {
+    await apiDeleteCenter(id);
+    setCenters((prev) => prev.filter((c) => c.id !== id));
   }, []);
 
   const value = useMemo(
-    () => ({ centers, setCenters, refresh }),
-    [centers, setCenters, refresh]
+    () => ({
+      centers,
+      loading,
+      error,
+      refreshCenters,
+      createCenter,
+      updateCenter,
+      deleteCenter,
+    }),
+    [
+      centers,
+      loading,
+      error,
+      refreshCenters,
+      createCenter,
+      updateCenter,
+      deleteCenter,
+    ]
   );
 
   return (

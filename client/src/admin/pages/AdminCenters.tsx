@@ -97,7 +97,7 @@ const defaultCenter = (): WashCenter => ({
 });
 
 export function AdminCenters() {
-  const { centers, setCenters } = useCenters();
+  const { centers, createCenter, updateCenter, deleteCenter } = useCenters();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<WashCenter | null>(null);
   const [form, setForm] = useState<WashCenter>(defaultCenter());
@@ -119,7 +119,7 @@ export function AdminCenters() {
     setDialogOpen(true);
   }
 
-  function saveCenter() {
+  async function saveCenter() {
     if (!form.name.trim()) {
       toast.error("Name is required");
       return;
@@ -135,21 +135,27 @@ export function AdminCenters() {
       reviewCount: form.reviewCount || 0,
     };
 
-    if (editing) {
-      setCenters(
-        centers.map((c) => (c.id === editing.id ? nextCenter : c))
-      );
-      toast.success("Center updated");
-    } else {
-      setCenters([...centers, { ...nextCenter, id: form.id || newId() }]);
-      toast.success("Center added");
+    try {
+      if (editing) {
+        await updateCenter(nextCenter);
+        toast.success("Center updated");
+      } else {
+        await createCenter({ ...nextCenter, id: form.id || newId() });
+        toast.success("Center added");
+      }
+      setDialogOpen(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not save center");
     }
-    setDialogOpen(false);
   }
 
-  function deleteCenter(id: string) {
-    setCenters(centers.filter((c) => c.id !== id));
-    toast.success("Center deleted");
+  async function removeCenter(id: string) {
+    try {
+      await deleteCenter(id);
+      toast.success("Center deleted");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not delete center");
+    }
   }
 
   function addServiceRow() {
@@ -269,7 +275,7 @@ export function AdminCenters() {
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
                       <AlertDialogAction
-                        onClick={() => deleteCenter(c.id)}
+                        onClick={() => removeCenter(c.id)}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       >
                         Delete

@@ -39,10 +39,10 @@ const userSchema = new mongoose.Schema({
 
 const SALT_ROUNDS = 10;
 
-userSchema.pre('save', async function hashPassword(next) {
-  if (!this.isModified('password')) return next();
+/** Async middleware must not call `next()` — see Mongoose docs for `pre('save')`. */
+userSchema.pre('save', async function hashPassword() {
+  if (!this.isModified('password')) return;
   this.password = await bcrypt.hash(this.password, SALT_ROUNDS);
-  next();
 });
 
 userSchema.methods.comparePassword = function comparePassword(candidate) {

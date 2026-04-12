@@ -6,31 +6,73 @@ const { inferRoleFromEmail } = require('../utils/role');
 
 const router = express.Router();
 
-function signToken(userId) {
-  const secret = process.env.JWT_SECRET;
+function jwtSecret() {
+  return (process.env.JWT_SECRET || '').trim();
+}
+
+function signToken(userId, role) {
+  const secret = jwtSecret();
   if (!secret) {
     throw new Error('JWT_SECRET is not configured');
   }
   const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
-  return jwt.sign({ sub: userId }, secret, { expiresIn });
+  return jwt.sign({ sub: userId, role }, secret, { expiresIn });
 }
 
 function formatUser(doc) {
+  const o = doc && typeof doc.toObject === 'function' ? doc.toObject() : doc;
+  const id = o._id ?? o.id;
   return {
-    id: doc._id.toString(),
-    name: doc.name,
-    email: doc.email,
-    phone: doc.phone,
-    role: doc.role,
+    id: id != null ? String(id) : '',
+    name: o.name,
+    email: o.email,
+    phone: o.phone,
+    role: o.role,
   };
 }
 
 function ensureJwtSecret(res) {
-  if (!process.env.JWT_SECRET) {
+  if (!jwtSecret()) {
     res.status(500).json({ message: 'JWT_SECRET is not configured' });
     return false;
   }
   return true;
+}
+
+function isDuplicateKeyError(err) {
+  if (!err) return false;
+  const c = err.code;
+  return c === 11000 || c === '11000' || String(c).includes('11000');
+}
+
+/** Non-Error throws in async routes can crash the catch block when reading `.name` / `.code`. */
+function normalizeError(raw) {
+  if (raw instanceof Error) return raw;
+  return new Error(
+    typeof raw === 'string' ? raw : `Non-Error rejection: ${String(raw)}`
+  );
+}
+
+function errorDetail(err) {
+  const parts = [
+    err.message,
+    err.code != null ? `code=${err.code}` : null,
+    err.name && err.name !== 'Error' ? err.name : null,
+  ].filter(Boolean);
+  return parts.length ? parts.join(' | ') : String(err);
+}
+
+function validationMessages(err) {
+  if (!err || err.name !== 'ValidationError' || !err.errors) return null;
+  try {
+    return Object.values(err.errors)
+      .map((x) => (x && typeof x === 'object' && x.message ? x.message : null))
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+  } catch {
+    return null;
+  }
 }
 
 /** POST /api/auth/register */
@@ -60,14 +102,31 @@ router.post('/register', async (req, res) => {
       role,
     });
 
-    const token = signToken(user._id.toString());
+    const token = signToken(user._id.toString(), user.role);
     return res.status(201).json({ user: formatUser(user), token });
-  } catch (err) {
-    if (err.code === 11000) {
-      return res.status(409).json({ message: 'An account with this email already exists' });
+  } catch (raw) {
+    const e = normalizeError(raw);
+    try {
+      if (isDuplicateKeyError(e)) {
+        return res.status(409).json({ message: 'An account with this email already exists' });
+      }
+      const vmsg = validationMessages(e);
+      if (vmsg) {
+        return res.status(400).json({ message: vmsg || 'Validation failed' });
+      }
+    } catch (inner) {
+      const innerNorm = normalizeError(inner);
+      console.error('POST /register (handler bug)', innerNorm);
+      return res.status(500).json({
+        message: 'Registration failed',
+        detail: errorDetail(innerNorm),
+      });
     }
-    console.error(err);
-    return res.status(500).json({ message: 'Registration failed' });
+    console.error('POST /register', e);
+    return res.status(500).json({
+      message: 'Registration failed',
+      detail: errorDetail(e),
+    });
   }
 });
 
@@ -89,7 +148,7 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    const token = signToken(user._id.toString());
+    const token = signToken(user._id.toString(), user.role);
     const plain = user.toObject();
     delete plain.password;
     return res.json({ user: formatUser(user), token });

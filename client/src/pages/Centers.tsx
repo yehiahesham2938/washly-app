@@ -16,7 +16,7 @@ import { areas, centerMinPrice } from "@/data/washCenters";
 type SortKey = "rating" | "price" | "reviews";
 
 export function Centers() {
-  const { centers } = useCenters();
+  const { centers, loading, error } = useCenters();
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortKey>("rating");
   const [area, setArea] = useState<(typeof areas)[number]>("All");
@@ -53,6 +53,12 @@ export function Centers() {
       <p className="mt-2 text-muted-foreground">
         Browse and book from our network of trusted wash centers
       </p>
+
+      {error && (
+        <p className="mt-4 rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {error}
+        </p>
+      )}
 
       <div className="mt-6 flex flex-col gap-4 sm:flex-row">
         <div className="relative flex-1">
@@ -97,14 +103,20 @@ export function Centers() {
       </div>
 
       <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {sorted.map((c) => (
-          <CenterCard key={c.id} center={c} />
-        ))}
+        {loading && (
+          <p className="col-span-full text-center text-muted-foreground">
+            Loading centers…
+          </p>
+        )}
+        {!loading &&
+          sorted.map((c) => <CenterCard key={c.id} center={c} />)}
       </div>
 
-      {sorted.length === 0 && (
+      {!loading && sorted.length === 0 && (
         <div className="py-20 text-center text-muted-foreground">
-          No centers found matching your search.
+          {centers.length === 0
+            ? "No centers available yet."
+            : "No centers found matching your search."}
         </div>
       )}
     </div>

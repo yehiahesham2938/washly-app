@@ -1,4 +1,6 @@
 import { useState, type FormEvent } from "react";
+
+import { Loader2 } from "lucide-react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
@@ -6,9 +8,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
+import { register } from "@/services/api/auth";
 
 export function Signup() {
-  const { signup, user } = useAuth();
+  const { applyAuthSession, user } = useAuth();
   const navigate = useNavigate();
 
   const [name, setName] = useState("");
@@ -16,20 +19,34 @@ export function Signup() {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   if (user) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  function onSubmit(e: FormEvent) {
+  async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError("");
-    const ok = signup({ name, email, phone, password });
-    if (!ok) {
-      setError("An account with this email already exists.");
-      return;
+    setSubmitting(true);
+    try {
+      const { user: created, token } = await register({
+        name,
+        email,
+        phone,
+        password,
+      });
+      applyAuthSession(created, token);
+      navigate("/dashboard", { replace: true });
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Could not create your account. Please try again."
+      );
+    } finally {
+      setSubmitting(false);
     }
-    navigate("/dashboard", { replace: true });
   }
 
   return (
@@ -90,8 +107,20 @@ export function Signup() {
                 {error}
               </p>
             )}
-            <Button type="submit" className="w-full" variant="gradient">
-              Create account
+            <Button
+              type="submit"
+              className="inline-flex w-full items-center justify-center gap-2"
+              variant="gradient"
+              disabled={submitting}
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Creating…
+                </>
+              ) : (
+                "Create account"
+              )}
             </Button>
           </form>
           <p className="mt-6 text-center text-sm text-muted-foreground">

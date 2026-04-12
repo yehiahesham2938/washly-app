@@ -1,9 +1,9 @@
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+
 const mongoose = require('mongoose');
-const dotenv = require('dotenv');
 const CarWash = require('./models/CarWash');
 const HomePackage = require('./models/HomePackage');
-
-dotenv.config();
 
 /** Mirrors client `HOME_PACKAGES` in client/src/pages/HomeBooking.tsx */
 const homePackageSeed = [

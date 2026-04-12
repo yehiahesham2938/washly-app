@@ -25,15 +25,19 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 
 export function AdminUsers() {
-  const { allUsers, setAllUsers, user: currentUser } = useAuth();
+  const { allUsers, deleteUserById, user: currentUser } = useAuth();
 
-  function deleteUser(id: string) {
+  async function deleteUser(id: string) {
     if (id === currentUser?.id) {
       toast.error("You cannot delete your own account here.");
       return;
     }
-    setAllUsers(allUsers.filter((u) => u.id !== id));
-    toast.success("User removed");
+    try {
+      await deleteUserById(id);
+      toast.success("User removed");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not remove user");
+    }
   }
 
   return (

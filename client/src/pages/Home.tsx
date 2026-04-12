@@ -51,7 +51,7 @@ const stats = [
 ];
 
 export function Home() {
-  const { centers } = useCenters();
+  const { centers, loading: centersLoading } = useCenters();
 
   const topRated = useMemo(
     () => getHomeSpotlightCenters(centers),
@@ -227,9 +227,18 @@ export function Home() {
             </Button>
           </div>
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {topRated.map((c) => (
-              <CenterCard key={c.id} center={c} />
-            ))}
+            {centersLoading && (
+              <p className="col-span-full text-center text-muted-foreground">
+                Loading featured centers…
+              </p>
+            )}
+            {!centersLoading &&
+              topRated.map((c) => <CenterCard key={c.id} center={c} />)}
+            {!centersLoading && topRated.length === 0 && (
+              <p className="col-span-full text-center text-muted-foreground">
+                Featured centers will appear here once loaded from the server.
+              </p>
+            )}
           </div>
           <div className="mt-8 text-center md:hidden">
             <Button asChild variant="outline">

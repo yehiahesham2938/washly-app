@@ -89,7 +89,7 @@ export function Booking() {
     return lines.length ? lines.join("\n\n") : undefined;
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!user) {
       toast.error("Please sign in to confirm your booking");
@@ -100,7 +100,7 @@ export function Booking() {
       return;
     }
     try {
-      const booking = addBooking({
+      const booking = await addBooking({
         kind: "center",
         centerId: center.id,
         centerName: center.name,

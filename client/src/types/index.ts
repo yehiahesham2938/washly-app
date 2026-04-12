@@ -41,7 +41,7 @@ export type BookingStatus =
   | "Cancelled";
 export type BookingKind = "center" | "home";
 
-/** Stored booking (localStorage + admin) */
+/** Stored booking (API / admin) */
 export type BookingRecordStatus =
   | "pending"
   | "confirmed"
@@ -93,8 +93,17 @@ export interface User {
   email: string;
   name: string;
   phone: string;
-  password: string;
   role: UserRole;
+}
+
+/** Home wash packages from GET /api/home-packages */
+export interface HomePackage {
+  id: string;
+  name: string;
+  description: string;
+  durationMin: number;
+  price: number;
+  features: string[];
 }
 
 export type VehicleType = "Sedan" | "SUV" | "Truck" | "Van";

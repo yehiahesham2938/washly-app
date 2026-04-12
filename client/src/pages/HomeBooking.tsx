@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import {
@@ -35,45 +35,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
 import { getTimeSlots } from "@/lib/timeSlots";
 import { totalPrice, vehicleSurcharge } from "@/lib/pricing";
+import { fetchHomePackages } from "@/services/api/homePackages";
 import { cn } from "@/lib/utils";
-import type { VehicleType } from "@/types";
-
-const HOME_PACKAGES = [
-  {
-    id: "home-1",
-    name: "Driveway Express",
-    description: "Exterior hand wash and dry at your location.",
-    durationMin: 40,
-    price: 55,
-    features: ["Hand wash & dry", "Wheels & tires", "Exterior windows"],
-  },
-  {
-    id: "home-2",
-    name: "Curb-to-Curb Detail",
-    description: "Interior vacuum, wipe-down, and exterior wash.",
-    durationMin: 90,
-    price: 119,
-    features: ["Full exterior wash", "Interior vacuum", "Dash & console wipe"],
-  },
-  {
-    id: "home-3",
-    name: "Full Home Spa",
-    description: "Complete interior and exterior detailing.",
-    durationMin: 150,
-    price: 219,
-    features: ["Deep clean interior", "Clay & wax exterior", "Leather treatment"],
-  },
-] as const;
-
-type HomePkg = (typeof HOME_PACKAGES)[number];
+import type { HomePackage, VehicleType } from "@/types";
 
 export function HomeBooking() {
   const navigate = useNavigate();
   const { addBooking, user } = useAuth();
 
-  const [selectedService, setSelectedService] = useState<string>(
-    HOME_PACKAGES[0].id
-  );
+  const [packages, setPackages] = useState<HomePackage[]>([]);
+  const [packagesLoading, setPackagesLoading] = useState(true);
+  const [selectedService, setSelectedService] = useState("");
   const [date, setDate] = useState<Date | undefined>();
   const [time, setTime] = useState("");
   const [payment, setPayment] = useState("card");
@@ -83,13 +55,32 @@ export function HomeBooking() {
   const [vehicle, setVehicle] = useState<VehicleType>("Sedan");
   const [notes, setNotes] = useState("");
 
-  const service = useMemo((): HomePkg => {
-    return HOME_PACKAGES.find((s) => s.id === selectedService) ?? HOME_PACKAGES[0];
-  }, [selectedService]);
+  useEffect(() => {
+    let cancelled = false;
+    fetchHomePackages()
+      .then((list) => {
+        if (cancelled) return;
+        setPackages(list);
+        if (list[0]) setSelectedService((prev) => prev || list[0].id);
+      })
+      .catch(() => {
+        toast.error("Could not load home wash packages");
+      })
+      .finally(() => {
+        if (!cancelled) setPackagesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const service = useMemo((): HomePackage | undefined => {
+    return packages.find((s) => s.id === selectedService) ?? packages[0];
+  }, [packages, selectedService]);
 
   const timeSlots = useMemo(() => getTimeSlots(), []);
 
-  const price = totalPrice(service.price, vehicle);
+  const price = service ? totalPrice(service.price, vehicle) : 0;
   const surcharge = vehicleSurcharge(vehicle);
 
   function composeNotesForBooking(): string | undefined {
@@ -107,10 +98,14 @@ export function HomeBooking() {
     return lines.length ? lines.join("\n\n") : undefined;
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!user) {
       toast.error("Please sign in to schedule a home wash");
+      return;
+    }
+    if (!service) {
+      toast.error("Packages are still loading");
       return;
     }
     if (!date || !time || !name.trim() || !phone.trim() || !address.trim()) {
@@ -118,9 +113,10 @@ export function HomeBooking() {
       return;
     }
     try {
-      const booking = addBooking({
+      const booking = await addBooking({
         kind: "home",
         centerName: "Home service",
+        serviceId: service.id,
         serviceName: service.name,
         date: format(date, "yyyy-MM-dd"),
         time,
@@ -134,7 +130,7 @@ export function HomeBooking() {
     } catch {
       toast.error("Unable to save booking. Please try again.");
     }
-  };
+  }
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8">
@@ -166,7 +162,17 @@ export function HomeBooking() {
               Choose Your Package
             </h3>
             <div className="grid gap-4 sm:grid-cols-3">
-              {HOME_PACKAGES.map((s) => (
+              {packagesLoading && (
+                <p className="col-span-full text-sm text-muted-foreground">
+                  Loading packages…
+                </p>
+              )}
+              {!packagesLoading && packages.length === 0 && (
+                <p className="col-span-full text-sm text-destructive">
+                  No packages available. Please try again later.
+                </p>
+              )}
+              {packages.map((s) => (
                 <button
                   key={s.id}
                   type="button"
@@ -283,8 +289,8 @@ export function HomeBooking() {
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                Add-on ${surcharge} applied to base package price (${service.price}{" "}
-                + ${surcharge} = ${price}).
+                Add-on ${surcharge} applied to base package price ($
+                {service?.price ?? 0} + ${surcharge} = ${price}).
               </p>
             </div>
             <div className="space-y-2">

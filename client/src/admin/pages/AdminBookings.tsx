@@ -40,7 +40,8 @@ const STATUSES: BookingRecordStatus[] = [
 ];
 
 export function AdminBookings() {
-  const { allBookingRecords, setAllBookingRecords } = useAuth();
+  const { allBookingRecords, updateBookingStatus, deleteBookingRecord } =
+    useAuth();
 
   const sorted = useMemo(
     () =>
@@ -51,17 +52,22 @@ export function AdminBookings() {
     [allBookingRecords]
   );
 
-  function updateStatus(id: string, status: BookingRecordStatus) {
-    const next = allBookingRecords.map((b) =>
-      b.id === id ? { ...b, status } : b
-    );
-    setAllBookingRecords(next);
-    toast.success("Booking status updated");
+  async function updateStatus(id: string, status: BookingRecordStatus) {
+    try {
+      await updateBookingStatus(id, status);
+      toast.success("Booking status updated");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not update status");
+    }
   }
 
-  function deleteBooking(id: string) {
-    setAllBookingRecords(allBookingRecords.filter((b) => b.id !== id));
-    toast.success("Booking removed");
+  async function removeBooking(id: string) {
+    try {
+      await deleteBookingRecord(id);
+      toast.success("Booking removed");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not remove booking");
+    }
   }
 
   return (
@@ -152,7 +158,7 @@ export function AdminBookings() {
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
                           <AlertDialogAction
-                            onClick={() => deleteBooking(b.id)}
+                            onClick={() => removeBooking(b.id)}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                           >
                             Delete

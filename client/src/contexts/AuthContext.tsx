@@ -2,92 +2,136 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
 
-import { legacyStatusToRecord, recordToBooking } from "@/lib/bookingMappers";
-import { newId } from "@/lib/id";
-import { KEYS, getData, setData } from "@/services/storage";
+import {
+  clearSession,
+  createBooking as apiCreateBooking,
+  deleteBooking as apiDeleteBooking,
+  deleteUser as apiDeleteUser,
+  fetchAllBookings,
+  fetchAllUsers,
+  fetchMe,
+  fetchMyBookings,
+  getStoredToken,
+  login as loginApi,
+  patchBookingStatus,
+  persistSession,
+} from "@/services/api";
+import { recordToBooking } from "@/lib/bookingMappers";
 import type { Booking, BookingRecord, User } from "@/types";
 
-const SESSION_KEY = "washly_session";
-
-function inferRole(email: string): User["role"] {
-  return email.trim().toLowerCase().endsWith("@admin.com") ? "admin" : "user";
-}
-
-function loadUsers(): User[] {
-  const raw =
-    getData<(User & { role?: User["role"] })[]>(KEYS.users) ?? [];
-  return raw.map((u) => ({
-    ...u,
-    role: u.role ?? inferRole(u.email),
-  }));
-}
-
-function saveUsers(users: User[]) {
-  setData(KEYS.users, users);
-}
-
-function loadBookingRecords(): BookingRecord[] {
-  return getData<BookingRecord[]>(KEYS.bookings) ?? [];
-}
-
-function saveBookingRecords(bookings: BookingRecord[]) {
-  setData(KEYS.bookings, bookings);
-}
-
-function loadSessionUserId(): string | null {
-  return localStorage.getItem(SESSION_KEY);
-}
-
-function saveSessionUserId(id: string | null) {
-  if (id) localStorage.setItem(SESSION_KEY, id);
-  else localStorage.removeItem(SESSION_KEY);
-}
-
 type AuthContextValue = {
+  authReady: boolean;
   user: User | null;
   allUsers: User[];
   bookings: Booking[];
   allBookingRecords: BookingRecord[];
-  login: (email: string, password: string) => boolean;
-  signup: (data: {
-    name: string;
-    email: string;
-    phone: string;
-    password: string;
-  }) => boolean;
+  login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
+  applyAuthSession: (user: User, token: string) => void;
   logout: () => void;
+  refreshBookings: () => Promise<void>;
+  refreshAdminData: () => Promise<void>;
   addBooking: (
     booking: Omit<Booking, "id" | "createdAt" | "userId" | "status"> & {
       status?: Booking["status"];
     }
-  ) => Booking;
-  /** Replace all booking records (admin) */
-  setAllBookingRecords: (next: BookingRecord[]) => void;
-  /** Update users list (admin) */
-  setAllUsers: (next: User[]) => void;
+  ) => Promise<Booking>;
+  updateBookingStatus: (id: string, status: BookingRecord["status"]) => Promise<void>;
+  deleteBookingRecord: (id: string) => Promise<void>;
+  deleteUserById: (id: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [users, setUsers] = useState<User[]>(() => loadUsers());
-  const [bookingRecords, setBookingRecords] = useState<BookingRecord[]>(() =>
-    loadBookingRecords()
-  );
-  const [sessionUserId, setSessionUserId] = useState<string | null>(() =>
-    loadSessionUserId()
-  );
+  const [authReady, setAuthReady] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [bookingRecords, setBookingRecords] = useState<BookingRecord[]>([]);
+  const [allBookingRecords, setAllBookingRecords] = useState<BookingRecord[]>([]);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
 
-  const user = useMemo(
-    () =>
-      sessionUserId ? users.find((u) => u.id === sessionUserId) ?? null : null,
-    [users, sessionUserId]
-  );
+  const refreshBookings = useCallback(async () => {
+    if (!getStoredToken()) {
+      setBookingRecords([]);
+      return;
+    }
+    try {
+      const list = await fetchMyBookings();
+      setBookingRecords(list);
+    } catch {
+      setBookingRecords([]);
+    }
+  }, []);
+
+  const refreshAdminData = useCallback(async () => {
+    if (!getStoredToken()) {
+      setAllBookingRecords([]);
+      setAllUsers([]);
+      return;
+    }
+    try {
+      const [bookings, users] = await Promise.all([
+        fetchAllBookings(),
+        fetchAllUsers(),
+      ]);
+      setAllBookingRecords(bookings);
+      setAllUsers(users);
+    } catch {
+      setAllBookingRecords([]);
+      setAllUsers([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const token = getStoredToken();
+      if (!token) {
+        setUser(null);
+        setAuthReady(true);
+        return;
+      }
+      try {
+        const me = await fetchMe();
+        if (!cancelled) setUser(me);
+      } catch {
+        if (!cancelled) {
+          clearSession();
+          setUser(null);
+        }
+      } finally {
+        if (!cancelled) setAuthReady(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!authReady || !user) {
+      setBookingRecords([]);
+      setAllBookingRecords([]);
+      setAllUsers([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      await refreshBookings();
+      if (cancelled) return;
+      if (user.role === "admin") {
+        await refreshAdminData();
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [authReady, user?.id, user?.role, refreshBookings, refreshAdminData]);
 
   const bookings = useMemo(() => {
     if (!user) return [];
@@ -96,65 +140,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .map(recordToBooking);
   }, [bookingRecords, user]);
 
-  const login = useCallback(
-    (email: string, password: string) => {
-      const found = users.find(
-        (u) =>
-          u.email.toLowerCase() === email.trim().toLowerCase() &&
-          u.password === password
-      );
-      if (!found) return false;
-      setSessionUserId(found.id);
-      saveSessionUserId(found.id);
-      return true;
-    },
-    [users]
-  );
-
-  const signup = useCallback(
-    (data: {
-      name: string;
-      email: string;
-      phone: string;
-      password: string;
-    }) => {
-      const email = data.email.trim().toLowerCase();
-      if (users.some((u) => u.email.toLowerCase() === email)) return false;
-      const newUser: User = {
-        id: newId(),
-        name: data.name.trim(),
-        email,
-        phone: data.phone.trim(),
-        password: data.password,
-        role: inferRole(email),
+  const login = useCallback(async (email: string, password: string) => {
+    try {
+      const { user: u, token } = await loginApi(email, password);
+      persistSession(token);
+      setUser(u);
+      return { ok: true };
+    } catch (e) {
+      return {
+        ok: false,
+        error: e instanceof Error ? e.message : "Login failed",
       };
-      const next = [...users, newUser];
-      setUsers(next);
-      saveUsers(next);
-      setSessionUserId(newUser.id);
-      saveSessionUserId(newUser.id);
-      return true;
-    },
-    [users]
-  );
+    }
+  }, []);
+
+  const applyAuthSession = useCallback((u: User, token: string) => {
+    persistSession(token);
+    setUser(u);
+  }, []);
 
   const logout = useCallback(() => {
-    setSessionUserId(null);
-    saveSessionUserId(null);
+    clearSession();
+    setUser(null);
+    setBookingRecords([]);
+    setAllBookingRecords([]);
+    setAllUsers([]);
   }, []);
 
   const addBooking = useCallback(
-    (
+    async (
       partial: Omit<Booking, "id" | "createdAt" | "userId" | "status"> & {
         status?: Booking["status"];
       }
     ) => {
       if (!user) throw new Error("Not authenticated");
       const statusLegacy = partial.status ?? "Confirmed";
-      const record: BookingRecord = {
-        id: newId(),
-        userId: user.id,
-        userEmail: user.email,
+      const body: Record<string, unknown> = {
         kind: partial.kind,
         centerId: partial.centerId,
         centerName: partial.centerName,
@@ -166,51 +187,77 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         notes: partial.notes,
         address: partial.address,
         price: partial.price,
-        status: legacyStatusToRecord(statusLegacy),
-        createdAt: new Date().toISOString(),
+        status: statusLegacy,
       };
-      const next = [...bookingRecords, record];
-      setBookingRecords(next);
-      saveBookingRecords(next);
+      if (partial.kind === "home" && partial.serviceId) {
+        body.packageId = partial.serviceId;
+      }
+      const record = await apiCreateBooking(body);
+      setBookingRecords((prev) => [record, ...prev]);
+      if (user.role === "admin") {
+        setAllBookingRecords((prev) => [record, ...prev]);
+      }
       return recordToBooking(record);
     },
-    [bookingRecords, user]
+    [user]
   );
 
-  const setAllBookingRecords = useCallback((next: BookingRecord[]) => {
-    setBookingRecords(next);
-    saveBookingRecords(next);
+  const updateBookingStatus = useCallback(
+    async (id: string, status: BookingRecord["status"]) => {
+      await patchBookingStatus(id, status);
+      setAllBookingRecords((prev) =>
+        prev.map((b) => (b.id === id ? { ...b, status } : b))
+      );
+      setBookingRecords((prev) =>
+        prev.map((b) => (b.id === id ? { ...b, status } : b))
+      );
+    },
+    []
+  );
+
+  const deleteBookingRecord = useCallback(async (id: string) => {
+    await apiDeleteBooking(id);
+    setAllBookingRecords((prev) => prev.filter((b) => b.id !== id));
+    setBookingRecords((prev) => prev.filter((b) => b.id !== id));
   }, []);
 
-  const setAllUsers = useCallback((next: User[]) => {
-    setUsers(next);
-    saveUsers(next);
+  const deleteUserById = useCallback(async (id: string) => {
+    await apiDeleteUser(id);
+    setAllUsers((prev) => prev.filter((u) => u.id !== id));
   }, []);
 
   const value = useMemo(
     () => ({
+      authReady,
       user,
-      allUsers: users,
+      allUsers,
       bookings,
-      allBookingRecords: bookingRecords,
+      allBookingRecords,
       login,
-      signup,
+      applyAuthSession,
       logout,
+      refreshBookings,
+      refreshAdminData,
       addBooking,
-      setAllBookingRecords,
-      setAllUsers,
+      updateBookingStatus,
+      deleteBookingRecord,
+      deleteUserById,
     }),
     [
+      authReady,
       user,
-      users,
+      allUsers,
       bookings,
-      bookingRecords,
+      allBookingRecords,
       login,
-      signup,
+      applyAuthSession,
       logout,
+      refreshBookings,
+      refreshAdminData,
       addBooking,
-      setAllBookingRecords,
-      setAllUsers,
+      updateBookingStatus,
+      deleteBookingRecord,
+      deleteUserById,
     ]
   );
 

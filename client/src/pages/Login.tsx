@@ -1,4 +1,6 @@
 import { useState, type FormEvent } from "react";
+
+import { Loader2 } from "lucide-react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
@@ -17,20 +19,26 @@ export function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   if (user) {
     return <Navigate to={from} replace />;
   }
 
-  function onSubmit(e: FormEvent) {
+  async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError("");
-    const ok = login(email, password);
-    if (!ok) {
-      setError("Invalid email or password.");
-      return;
+    setSubmitting(true);
+    try {
+      const result = await login(email, password);
+      if (!result.ok) {
+        setError(result.error ?? "Invalid email or password.");
+        return;
+      }
+      navigate(from, { replace: true });
+    } finally {
+      setSubmitting(false);
     }
-    navigate(from, { replace: true });
   }
 
   return (
@@ -69,8 +77,20 @@ export function Login() {
                 {error}
               </p>
             )}
-            <Button type="submit" className="w-full" variant="gradient">
-              Sign in
+            <Button
+              type="submit"
+              className="inline-flex w-full items-center justify-center gap-2"
+              variant="gradient"
+              disabled={submitting}
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Signing in…
+                </>
+              ) : (
+                "Sign in"
+              )}
             </Button>
           </form>
           <p className="mt-6 text-center text-sm text-muted-foreground">
