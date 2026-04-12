@@ -3,6 +3,7 @@ import { NavLink, Outlet } from "react-router-dom";
 
 import { AdminSidebar } from "@/admin/components/AdminSidebar";
 import { WashlyBrandLoader } from "@/components/WashlyBrandLoader";
+import { WashlyLogo } from "@/components/WashlyLogo";
 import { cn } from "@/lib/utils";
 
 const ADMIN_ENTER_MS = 420;
@@ -39,7 +40,8 @@ export function AdminLayout() {
       >
         <AdminSidebar />
         <div className="md:pl-64">
-          <nav className="sticky top-0 z-30 flex gap-2 overflow-x-auto border-b border-border bg-card/80 px-3 py-2 backdrop-blur-lg md:hidden">
+          <nav className="sticky top-0 z-30 flex items-center gap-2 overflow-x-auto border-b border-border bg-card/80 px-3 py-2 backdrop-blur-lg md:hidden">
+            <WashlyLogo size="xs" className="mr-1 max-h-7 shrink-0" />
             {mobileLinks.map(({ to, label }) => (
               <NavLink
                 key={to}

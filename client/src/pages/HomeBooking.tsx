@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
-import { ArrowLeft, CalendarIcon, Car, Check, MapPin } from "lucide-react";
+import { ArrowLeft, CalendarIcon, Check, MapPin } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +30,7 @@ import {
   type BookingPaymentMethod,
   type PaymentMethodSectionHandle,
 } from "@/components/booking/PaymentMethodSection";
+import { WashlyLogo } from "@/components/WashlyLogo";
 import { useAuth } from "@/contexts/AuthContext";
 import { getTimeSlots } from "@/lib/timeSlots";
 import { totalPrice, vehicleSurcharge } from "@/lib/pricing";
@@ -140,8 +141,8 @@ export function HomeBooking() {
       </Button>
 
       <div className="mb-2 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-primary">
-          <Car className="h-5 w-5 text-primary-foreground" />
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white p-1.5 shadow-sm ring-1 ring-border">
+          <WashlyLogo size="sm" className="max-h-8" />
         </div>
         <div>
           <h1 className="text-3xl font-bold text-foreground">

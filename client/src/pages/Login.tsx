@@ -3,6 +3,7 @@ import { useState, type FormEvent } from "react";
 import { Loader2 } from "lucide-react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 
+import { WashlyLogo } from "@/components/WashlyLogo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -45,6 +46,9 @@ export function Login() {
     <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-12">
       <Card className="w-full max-w-md border-border/80 shadow-card">
         <CardHeader className="text-center">
+          <div className="mb-4 flex justify-center">
+            <WashlyLogo size="lg" />
+          </div>
           <CardTitle className="text-2xl">Welcome back</CardTitle>
           <CardDescription>Sign in to manage your bookings</CardDescription>
         </CardHeader>

@@ -7,6 +7,7 @@ import {
   Users,
 } from "lucide-react";
 
+import { WashlyLogo } from "@/components/WashlyLogo";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -29,8 +30,9 @@ export function AdminSidebar() {
 
   return (
     <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 flex-col border-r border-border bg-card/95 backdrop-blur-md md:flex">
-      <div className="flex h-16 items-center border-b border-border px-6">
-        <span className="bg-gradient-primary bg-clip-text text-lg font-bold text-transparent">
+      <div className="flex h-16 items-center gap-2 border-b border-border px-4">
+        <WashlyLogo size="sm" className="max-h-8 shrink-0" />
+        <span className="bg-gradient-primary bg-clip-text text-lg font-bold leading-tight text-transparent">
           Washly Admin
         </span>
       </div>

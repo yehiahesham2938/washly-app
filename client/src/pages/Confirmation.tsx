@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { format, parseISO } from "date-fns";
 
+import { WashlyLogo } from "@/components/WashlyLogo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Booking } from "@/types";
@@ -36,6 +37,9 @@ export function Confirmation() {
   return (
     <div className="mx-auto max-w-lg px-4 py-16 sm:px-6">
       <div className="flex flex-col items-center text-center">
+        <div className="mb-6 flex justify-center">
+          <WashlyLogo size="md" />
+        </div>
         <div
           className={`relative flex h-20 w-20 items-center justify-center rounded-full bg-gradient-primary shadow-lg transition-transform duration-500 ${
             showCheck ? "scale-100 opacity-100" : "scale-50 opacity-0"

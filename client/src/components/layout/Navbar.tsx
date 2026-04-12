@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Droplets, LayoutDashboard, LogOut, Menu, User, X } from "lucide-react";
+import { LayoutDashboard, LogOut, Menu, User, X } from "lucide-react";
+
+import { WashlyLogo } from "@/components/WashlyLogo";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -40,10 +42,8 @@ export function Navbar() {
   return (
     <nav className="sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur-lg">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-primary shadow-sm">
-            <Droplets className="h-5 w-5 text-primary-foreground" />
-          </div>
+        <Link to="/" className="flex items-center gap-2.5">
+          <WashlyLogo size="sm" className="max-h-9" />
           <span className="text-xl font-bold text-gradient">Washly</span>
         </Link>
 

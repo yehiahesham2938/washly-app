@@ -1,6 +1,5 @@
-import { Droplets } from "lucide-react";
-
 import { cn } from "@/lib/utils";
+import { WashlyLogo } from "@/components/WashlyLogo";
 
 type WashlyBrandLoaderProps = {
   /** Shown under the wordmark (e.g. admin context) */
@@ -28,18 +27,11 @@ export function WashlyBrandLoader({
       <div className="flex flex-col items-center gap-4">
         <div
           className={cn(
-            "flex items-center justify-center rounded-2xl bg-gradient-primary shadow-lg motion-safe:animate-washly-logo",
-            "ring-2 ring-primary/20 ring-offset-2 ring-offset-background",
-            compact ? "h-14 w-14" : "h-16 w-16"
+            "flex items-center justify-center rounded-2xl bg-card/80 p-3 shadow-lg ring-2 ring-primary/15 motion-safe:animate-washly-logo",
+            compact ? "px-4 py-3" : "px-5 py-4"
           )}
         >
-          <Droplets
-            className={cn(
-              "text-primary-foreground motion-safe:animate-washly-droplet",
-              compact ? "h-8 w-8" : "h-9 w-9"
-            )}
-            strokeWidth={2}
-          />
+          <WashlyLogo size={compact ? "lg" : "2xl"} />
         </div>
         <div className="flex flex-col items-center gap-1 text-center">
           <p

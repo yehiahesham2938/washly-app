@@ -5,7 +5,6 @@ import {
   Car,
   Clock,
   CreditCard,
-  Droplets,
   Home as HomeIcon,
   MapPin,
   Search,
@@ -13,6 +12,7 @@ import {
 } from "lucide-react";
 
 import CenterCard from "@/components/CenterCard";
+import { WashlyLogo } from "@/components/WashlyLogo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useCenters } from "@/contexts/CentersContext";
@@ -74,8 +74,11 @@ export function Home() {
         </div>
         <div className="container relative mx-auto px-4 py-24 md:py-36">
           <div className="max-w-2xl animate-fade-in-up">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-primary/20 px-4 py-1.5 text-sm font-medium text-primary-foreground backdrop-blur">
-              <Droplets className="h-4 w-4" /> #1 Car Wash Platform
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-primary/20 py-1.5 pl-2 pr-4 text-sm font-medium text-primary-foreground backdrop-blur">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white p-1 shadow-sm">
+                <WashlyLogo size="xs" className="h-7 max-h-7" />
+              </span>
+              #1 Car Wash Platform
             </div>
             <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-primary-foreground md:text-6xl">
               Your Car Deserves
