@@ -1,11 +1,14 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   Building2,
   CalendarCheck,
   LayoutDashboard,
+  LogOut,
   Users,
 } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
 const items = [
@@ -16,6 +19,14 @@ const items = [
 ] as const;
 
 export function AdminSidebar() {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  function handleSignOut() {
+    logout();
+    navigate("/", { replace: true });
+  }
+
   return (
     <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 flex-col border-r border-border bg-card/95 backdrop-blur-md md:flex">
       <div className="flex h-16 items-center border-b border-border px-6">
@@ -43,9 +54,18 @@ export function AdminSidebar() {
         ))}
       </nav>
       <div className="border-t border-border p-4">
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full justify-center gap-2"
+          onClick={handleSignOut}
+        >
+          <LogOut className="h-4 w-4" />
+          Sign out
+        </Button>
         <NavLink
           to="/"
-          className="text-sm text-muted-foreground hover:text-primary"
+          className="mt-3 block text-center text-sm text-muted-foreground hover:text-primary"
         >
           ← Back to site
         </NavLink>
