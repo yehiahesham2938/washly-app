@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { useRef, useState } from "react";
+import { ImagePlus, Pencil, Plus, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -39,6 +39,18 @@ import { newId } from "@/lib/id";
 import type { Area, Service, WashCenter } from "@/types";
 
 const AREA_OPTIONS = areas.filter((a) => a !== "All") as Area[];
+
+/** Keep uploads small so localStorage stays reliable */
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result as string);
+    r.onerror = () => reject(new Error("read failed"));
+    r.readAsDataURL(file);
+  });
+}
 
 type ServiceForm = {
   id: string;
@@ -90,6 +102,7 @@ export function AdminCenters() {
   const [editing, setEditing] = useState<WashCenter | null>(null);
   const [form, setForm] = useState<WashCenter>(defaultCenter());
   const [serviceForms, setServiceForms] = useState<ServiceForm[]>([]);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   function openCreate() {
     setEditing(null);
@@ -112,7 +125,7 @@ export function AdminCenters() {
       return;
     }
     if (!form.image.trim()) {
-      toast.error("Image URL is required");
+      toast.error("Please upload a center image");
       return;
     }
     const services = formsToServices(serviceForms);
@@ -160,6 +173,30 @@ export function AdminCenters() {
 
   function removeService(i: number) {
     setServiceForms((rows) => rows.filter((_, j) => j !== i));
+  }
+
+  async function onImageSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please choose an image file (JPEG, PNG, WebP, …)");
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      toast.error("Image must be 2 MB or smaller");
+      return;
+    }
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      setForm((f) => ({ ...f, image: dataUrl }));
+    } catch {
+      toast.error("Could not read that file");
+    }
+  }
+
+  function clearCenterImage() {
+    setForm((f) => ({ ...f, image: "" }));
   }
 
   return (
@@ -269,14 +306,57 @@ export function AdminCenters() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="image">Image URL</Label>
-              <Input
-                id="image"
-                value={form.image}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, image: e.target.value }))
-                }
+              <Label>Center image</Label>
+              <p className="text-xs text-muted-foreground">
+                Upload a photo (max 2 MB). It is saved with your data for this
+                browser.
+              </p>
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                onChange={onImageSelected}
               />
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+                <div className="relative aspect-[16/10] w-full max-w-[280px] overflow-hidden rounded-lg border border-border bg-muted">
+                  {form.image ? (
+                    <img
+                      src={form.image}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full min-h-[120px] flex-col items-center justify-center gap-1 p-4 text-center text-xs text-muted-foreground">
+                      <ImagePlus className="h-8 w-8 opacity-50" />
+                      No image yet
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="absolute left-[413px] top-[283px] rounded-xl"
+                    onClick={() => imageInputRef.current?.click()}
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    {form.image ? "Replace image" : "Upload image"}
+                  </Button>
+                  {form.image ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive"
+                      onClick={clearCenterImage}
+                    >
+                      Remove
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">

@@ -1,107 +1,105 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
-  Award,
-  CalendarClock,
+  Car,
+  Clock,
+  CreditCard,
+  Droplets,
   Home as HomeIcon,
   MapPin,
   Search,
   Star,
-  Truck,
 } from "lucide-react";
 
+import CenterCard from "@/components/CenterCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { useCenters } from "@/contexts/CentersContext";
-import {
-  areas,
-  centerMinPrice,
-  getHomeSpotlightCenters,
-} from "@/data/washCenters";
+import { getHomeSpotlightCenters } from "@/data/washCenters";
+
+const heroImage = "/hero-bg.png";
+
+const features = [
+  {
+    icon: Search,
+    title: "Discover",
+    desc: "Browse car wash centers near you with detailed info",
+  },
+  {
+    icon: Star,
+    title: "Compare",
+    desc: "Check ratings, services, and prices side by side",
+  },
+  {
+    icon: Clock,
+    title: "Book Instantly",
+    desc: "Pick your time slot and service in seconds",
+  },
+  {
+    icon: CreditCard,
+    title: "Pay Easy",
+    desc: "Secure checkout with your preferred payment method",
+  },
+];
+
+const stats = [
+  { value: "500+", label: "Wash Centers" },
+  { value: "50K+", label: "Happy Customers" },
+  { value: "4.8", label: "Average Rating" },
+  { value: "24/7", label: "Support" },
+];
 
 export function Home() {
   const { centers } = useCenters();
-  const [q, setQ] = useState("");
-  const [area, setArea] = useState<(typeof areas)[number]>("All");
 
-  const filtered = useMemo(() => {
-    return centers.filter((c) => {
-      const matchQ =
-        !q.trim() ||
-        c.name.toLowerCase().includes(q.toLowerCase()) ||
-        c.area.toLowerCase().includes(q.toLowerCase());
-      const matchArea = area === "All" || c.area === area;
-      return matchQ && matchArea;
-    });
-  }, [centers, q, area]);
-
-  const topRated = useMemo(() => {
-    const hasFilter = Boolean(q.trim()) || area !== "All";
-    if (hasFilter) {
-      return [...filtered]
-        .sort((a, b) => {
-          if (b.rating !== a.rating) return b.rating - a.rating;
-          return b.reviewCount - a.reviewCount;
-        })
-        .slice(0, 3);
-    }
-    return getHomeSpotlightCenters(centers);
-  }, [filtered, q, area, centers]);
+  const topRated = useMemo(
+    () => getHomeSpotlightCenters(centers),
+    [centers]
+  );
 
   return (
     <div>
-      <section className="relative min-h-[calc(100svh-4rem)] overflow-hidden border-b border-border/40">
+      {/* Hero */}
+      <section className="relative overflow-hidden">
         <div className="absolute inset-0">
           <img
-            src="/hero-bg.png"
-            alt=""
-            className="h-full w-full object-cover object-center"
+            src={heroImage}
+            alt="Car wash"
+            className="h-full w-full object-cover"
+            width={1920}
+            height={1080}
           />
-          <div className="absolute inset-0 bg-black/60" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/45 to-black/25" />
+          <div className="absolute inset-0 bg-foreground/70" />
         </div>
-
-        <div className="relative z-10 mx-auto flex min-h-[calc(100svh-4rem)] max-w-6xl flex-col justify-center px-4 py-16 sm:px-6 sm:py-20">
-          <div className="max-w-2xl">
-            <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-primary/90 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-sm backdrop-blur-sm">
-              <Award className="h-3.5 w-3.5 text-[hsl(195_90%_65%)]" />
-              #1 Car Wash Platform
-            </p>
-
-            <h1 className="mt-6 text-4xl font-bold leading-[1.1] tracking-tight text-white sm:text-5xl md:text-6xl">
-              <span className="block">Your Car Deserves</span>
-              <span className="mt-1 block text-[hsl(195,80%,45%)]">
-                a Perfect Wash
-              </span>
+        <div className="container relative mx-auto px-4 py-24 md:py-36">
+          <div className="max-w-2xl animate-fade-in-up">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-primary/20 px-4 py-1.5 text-sm font-medium text-primary-foreground backdrop-blur">
+              <Droplets className="h-4 w-4" /> #1 Car Wash Platform
+            </div>
+            <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-primary-foreground md:text-6xl">
+              Your Car Deserves
+              <br />
+              <span className="text-secondary">a Perfect Wash</span>
             </h1>
-
-            <p className="mt-6 max-w-xl text-lg text-white/95 sm:text-xl">
+            <p className="mt-5 text-lg text-primary-foreground/80">
               Book at a wash center or schedule a home visit — your car, your
               way.
             </p>
-
-            <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Button
-                size="lg"
-                className="h-12 rounded-xl px-8 text-base shadow-lg"
-                asChild
-              >
+            <div className="mt-8 flex flex-wrap gap-4">
+              <Button asChild size="lg" className="gap-2">
                 <Link to="/centers">
-                  <MapPin className="mr-2 h-5 w-5" />
-                  Find a Center
+                  <MapPin className="h-4 w-4" /> Find a Center
                 </Link>
               </Button>
               <Button
+                asChild
                 size="lg"
                 variant="outline"
-                className="h-12 rounded-xl border-2 border-white/90 bg-white/10 px-8 text-base text-white backdrop-blur-sm hover:bg-white/20 hover:text-white"
-                asChild
+                className="gap-2 border-primary-foreground/30 bg-primary-foreground/10 text-primary-foreground backdrop-blur hover:bg-primary-foreground/20"
               >
                 <Link to="/home-booking">
-                  <HomeIcon className="mr-2 h-5 w-5" />
-                  Book Home Service
+                  <HomeIcon className="h-4 w-4" /> Book Home Service
                 </Link>
               </Button>
             </div>
@@ -109,187 +107,164 @@ export function Home() {
         </div>
       </section>
 
-      <section className="border-b border-border/60 bg-background py-10">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <Card className="border-border/80 shadow-card">
-            <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Search by name or area..."
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  className="rounded-xl pl-9"
-                />
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {areas.map((a) => (
-                  <button
-                    key={a}
-                    type="button"
-                    onClick={() => setArea(a)}
-                    className={`rounded-xl px-3 py-2 text-xs font-medium transition-colors ${
-                      area === a
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "bg-muted text-muted-foreground hover:bg-muted/80"
-                    }`}
-                  >
-                    {a}
-                  </button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      <section className="border-t border-border/40 bg-[hsl(210,20%,98%)] py-14 sm:py-16">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-                Top Rated Centers
-              </h2>
-              <p className="mt-1 text-muted-foreground">
-                Explore highly rated wash centers
-              </p>
-            </div>
-            <Link
-              to="/centers"
-              className="inline-flex items-center gap-1 text-sm font-semibold text-primary transition-colors hover:text-primary/80"
-            >
-              View All
-              <ArrowRight className="h-4 w-4" />
+      {/* Two Services */}
+      <section className="py-20">
+        <div className="container mx-auto px-4">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold text-foreground">
+              Two Ways to Get Clean
+            </h2>
+            <p className="mt-2 text-muted-foreground">
+              Choose whichever fits your schedule
+            </p>
+          </div>
+          <div className="mt-10 grid gap-6 md:grid-cols-2">
+            <Link to="/centers" className="group">
+              <Card className="h-full card-shadow transition-all hover:card-hover-shadow hover:-translate-y-1">
+                <CardContent className="flex flex-col items-center p-8 text-center">
+                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent text-accent-foreground transition-colors group-hover:bg-gradient-primary group-hover:text-primary-foreground">
+                    <MapPin className="h-8 w-8" />
+                  </div>
+                  <h3 className="text-xl font-bold text-card-foreground">
+                    Visit a Wash Center
+                  </h3>
+                  <p className="mt-2 text-muted-foreground">
+                    Browse nearby centers, compare services & prices, and book
+                    your preferred time slot.
+                  </p>
+                  <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary">
+                    Browse Centers <ArrowRight className="h-4 w-4" />
+                  </span>
+                </CardContent>
+              </Card>
+            </Link>
+            <Link to="/home-booking" className="group">
+              <Card className="h-full card-shadow transition-all hover:card-hover-shadow hover:-translate-y-1">
+                <CardContent className="flex flex-col items-center p-8 text-center">
+                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent text-accent-foreground transition-colors group-hover:bg-gradient-primary group-hover:text-primary-foreground">
+                    <HomeIcon className="h-8 w-8" />
+                  </div>
+                  <h3 className="text-xl font-bold text-card-foreground">
+                    We Come to You
+                  </h3>
+                  <p className="mt-2 text-muted-foreground">
+                    Schedule a date & time and our team will wash your car at
+                    your home, office, or anywhere.
+                  </p>
+                  <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary">
+                    Schedule Home Wash <ArrowRight className="h-4 w-4" />
+                  </span>
+                </CardContent>
+              </Card>
             </Link>
           </div>
-
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {topRated.map((c) => {
-              const fromPrice = centerMinPrice(c);
-              const locationText = c.locationLine ?? c.address;
-              const tagNames = c.services.map((s) => s.name);
-              const showTags = tagNames.slice(0, 3);
-              const moreCount = tagNames.length - showTags.length;
-
-              return (
-                <Card
-                  key={c.id}
-                  className="group overflow-hidden rounded-xl border-border/60 bg-card shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-shadow duration-300 hover:shadow-[0_12px_40px_-8px_hsl(210_100%_45%_/_0.12)]"
-                >
-                  <div className="relative aspect-[16/10] overflow-hidden rounded-t-xl">
-                    <img
-                      src={c.image}
-                      alt=""
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                    />
-                    <span className="absolute left-3 top-3 rounded-lg bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground shadow-sm">
-                      From ${fromPrice}
-                    </span>
-                  </div>
-                  <CardContent className="space-y-4 p-5">
-                    <h3 className="text-lg font-bold leading-snug text-foreground">
-                      {c.name}
-                    </h3>
-                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                      <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                      <span className="font-medium text-foreground">
-                        {c.rating.toFixed(1)}
-                      </span>
-                      <span>({c.reviewCount})</span>
-                    </div>
-                    <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
-                      <span>{locationText}</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {showTags.map((name, i) => (
-                        <span
-                          key={`${c.id}-t-${i}`}
-                          className="rounded-full bg-[hsl(195_80%_94%)] px-2.5 py-1 text-xs font-medium text-[hsl(210_100%_38%)]"
-                        >
-                          {name}
-                        </span>
-                      ))}
-                      {moreCount > 0 && (
-                        <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-                          +{moreCount} more
-                        </span>
-                      )}
-                    </div>
-                    <Button className="w-full rounded-xl" variant="default" asChild>
-                      <Link to={`/centers/${c.id}`}>View details</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
         </div>
       </section>
 
-      <section className="border-y border-border/60 bg-muted/40 py-14">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <h2 className="text-center text-2xl font-semibold tracking-tight">
-            How it works
-          </h2>
-          <p className="mx-auto mt-2 max-w-xl text-center text-muted-foreground">
-            Three quick steps from browse to shine.
-          </p>
-          <div className="mt-10 grid gap-8 md:grid-cols-3">
-            {[
-              {
-                step: "1",
-                title: "Choose a center or home",
-                body: "Browse locations, ratings, and services that fit your vehicle.",
-                icon: MapPin,
-              },
-              {
-                step: "2",
-                title: "Pick date & time",
-                body: "Select a slot that works for you and your vehicle type.",
-                icon: CalendarClock,
-              },
-              {
-                step: "3",
-                title: "Show up or relax",
-                body: "Arrive at the bay or wait at home — we handle the rest.",
-                icon: Truck,
-              },
-            ].map((item) => (
+      {/* Stats */}
+      <section className="bg-gradient-primary py-12">
+        <div className="container mx-auto grid grid-cols-2 gap-8 px-4 md:grid-cols-4">
+          {stats.map((s) => (
+            <div key={s.label} className="text-center">
+              <div className="text-3xl font-bold text-primary-foreground">
+                {s.value}
+              </div>
+              <div className="mt-1 text-sm text-primary-foreground/70">
+                {s.label}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* How it Works */}
+      <section className="py-20">
+        <div className="container mx-auto px-4">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold text-foreground">How It Works</h2>
+            <p className="mt-2 text-muted-foreground">
+              Book your car wash in 4 simple steps
+            </p>
+          </div>
+          <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            {features.map((f, i) => (
               <div
-                key={item.step}
-                className="relative rounded-xl border bg-card p-6 text-center shadow-card"
+                key={f.title}
+                className="group rounded-xl border border-border bg-card p-6 text-center card-shadow transition-all hover:card-hover-shadow"
               >
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-primary text-primary-foreground shadow-md">
-                  <item.icon className="h-6 w-6" />
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-accent text-accent-foreground transition-colors group-hover:bg-gradient-primary group-hover:text-primary-foreground">
+                  <f.icon className="h-6 w-6" />
                 </div>
-                <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-primary">
-                  Step {item.step}
-                </p>
-                <h3 className="mt-1 font-semibold">{item.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{item.body}</p>
+                <div className="mb-1 text-xs font-semibold text-primary">
+                  Step {i + 1}
+                </div>
+                <h3 className="text-lg font-semibold text-card-foreground">
+                  {f.title}
+                </h3>
+                <p className="mt-2 text-sm text-muted-foreground">{f.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-        <div className="overflow-hidden rounded-2xl bg-gradient-primary px-6 py-12 text-center text-primary-foreground shadow-xl sm:px-12">
-          <h2 className="text-2xl font-bold sm:text-3xl">
-            Prefer we come to you?
-          </h2>
-          <p className="mx-auto mt-3 max-w-lg text-primary-foreground/90">
-            Schedule an at-home wash — same pro quality, zero drive time.
-          </p>
-          <Button
-            size="lg"
-            variant="secondary"
-            className="mt-8 bg-white text-primary hover:bg-white/90"
-            asChild
-          >
-            <Link to="/home-booking">Book home service</Link>
-          </Button>
+      {/* Featured Centers */}
+      <section className="bg-muted/50 py-20">
+        <div className="container mx-auto px-4">
+          <div className="flex items-end justify-between">
+            <div>
+              <h2 className="text-3xl font-bold text-foreground">
+                Top Rated Centers
+              </h2>
+              <p className="mt-2 text-muted-foreground">
+                Explore highly rated wash centers
+              </p>
+            </div>
+            <Button asChild variant="ghost" className="hidden gap-1 md:flex">
+              <Link to="/centers">
+                View All <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {topRated.map((c) => (
+              <CenterCard key={c.id} center={c} />
+            ))}
+          </div>
+          <div className="mt-8 text-center md:hidden">
+            <Button asChild variant="outline">
+              <Link to="/centers">View All Centers</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="py-20">
+        <div className="container mx-auto px-4">
+          <div className="rounded-2xl bg-gradient-primary p-10 text-center md:p-16">
+            <Car className="mx-auto h-12 w-12 text-primary-foreground/80" />
+            <h2 className="mt-4 text-3xl font-bold text-primary-foreground">
+              Ready to Get Started?
+            </h2>
+            <p className="mx-auto mt-3 max-w-md text-primary-foreground/80">
+              Join thousands of car owners who trust Washly for their car care
+              needs.
+            </p>
+            <div className="mt-8 flex flex-wrap justify-center gap-4">
+              <Button asChild size="lg" variant="secondary">
+                <Link to="/centers">Find a Center</Link>
+              </Button>
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="border-primary-foreground/30 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20"
+              >
+                <Link to="/home-booking">Schedule Home Wash</Link>
+              </Button>
+            </div>
+          </div>
         </div>
       </section>
     </div>
