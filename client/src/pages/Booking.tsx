@@ -31,8 +31,11 @@ import {
 } from "@/components/booking/PaymentMethodSection";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCenters } from "@/contexts/CentersContext";
+import {
+  getCenterTimeSlotsForYmd,
+  isYmdOpenForCenter,
+} from "@/lib/centerScheduleSlots";
 import { getServiceFromStores } from "@/lib/centerQueries";
-import { getTimeSlots } from "@/lib/timeSlots";
 import {
   fetchFullyBookedDates,
   fetchOccupiedTimes,
@@ -71,7 +74,13 @@ export function Booking() {
     () => new Set()
   );
 
-  const timeSlots = useMemo(() => getTimeSlots(), []);
+  const timeSlots = useMemo(() => {
+    if (!resolved || !date) return [];
+    return getCenterTimeSlotsForYmd(
+      resolved.center,
+      format(date, "yyyy-MM-dd")
+    );
+  }, [resolved, date]);
 
   useEffect(() => {
     if (!user) return;
@@ -129,6 +138,15 @@ export function Booking() {
     };
   }, [centerId, serviceId, date]);
 
+  useEffect(() => {
+    if (!resolved || !date) return;
+    const slots = getCenterTimeSlotsForYmd(
+      resolved.center,
+      format(date, "yyyy-MM-dd")
+    );
+    setTime((prev) => (prev && slots.includes(prev) ? prev : ""));
+  }, [resolved, date]);
+
   if (!resolved) {
     return (
       <div className="container mx-auto px-4 py-20 text-center">
@@ -165,6 +183,14 @@ export function Booking() {
     }
     if (!date || !time) {
       toast.error("Please select a date and time");
+      return;
+    }
+    const slotOptions = getCenterTimeSlotsForYmd(
+      center,
+      format(date, "yyyy-MM-dd")
+    );
+    if (!slotOptions.includes(time)) {
+      toast.error("Choose a time within this center's working hours");
       return;
     }
     if (occupiedTimes.includes(time)) {
@@ -316,6 +342,7 @@ export function Booking() {
                       const day = startOfDay(d);
                       if (isBefore(day, startOfDay(new Date()))) return true;
                       const ymd = format(d, "yyyy-MM-dd");
+                      if (!isYmdOpenForCenter(center, ymd)) return true;
                       return fullyBookedDates.has(ymd);
                     }}
                     initialFocus
@@ -326,24 +353,34 @@ export function Booking() {
             </div>
             <div>
               <Label>Time Slot</Label>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {timeSlots.map((t) => {
-                  const taken = occupiedTimes.includes(t);
-                  return (
-                    <Button
-                      key={t}
-                      type="button"
-                      size="sm"
-                      variant={time === t ? "default" : "outline"}
-                      disabled={taken}
-                      title={taken ? "This slot is already booked" : undefined}
-                      onClick={() => setTime(t)}
-                    >
-                      {t}
-                    </Button>
-                  );
-                })}
-              </div>
+              {!date ? (
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Pick a date to see available times for this center.
+                </p>
+              ) : timeSlots.length === 0 ? (
+                <p className="mt-2 text-sm text-muted-foreground">
+                  This center is closed on that day.
+                </p>
+              ) : (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {timeSlots.map((t) => {
+                    const taken = occupiedTimes.includes(t);
+                    return (
+                      <Button
+                        key={t}
+                        type="button"
+                        size="sm"
+                        variant={time === t ? "default" : "outline"}
+                        disabled={taken}
+                        title={taken ? "This slot is already booked" : undefined}
+                        onClick={() => setTime(t)}
+                      >
+                        {t}
+                      </Button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

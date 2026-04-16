@@ -1,11 +1,13 @@
 const express = require('express');
 const Booking = require('../models/Booking');
 const User = require('../models/User');
+const CarWash = require('../models/CarWash');
 const { authRequired } = require('../middleware/auth');
 const { adminOnly } = require('../middleware/admin');
 const { bookingToRecord, legacyStatusToRecord } = require('../utils/bookingMap');
 const { SLOT_BLOCKING_STATUSES } = require('../utils/availability');
-const { getTimeSlots, SLOT_COUNT } = require('../utils/timeSlots');
+const { getTimeSlots } = require('../utils/timeSlots');
+const { getCenterSlotsForYmd } = require('../utils/centerScheduleSlots');
 
 const router = express.Router();
 
@@ -62,6 +64,11 @@ router.get('/fully-booked-dates', async (req, res) => {
       .select('date time')
       .lean();
 
+    const center = await CarWash.findById(String(centerId)).lean();
+    if (!center) {
+      return res.status(404).json({ message: 'Center not found' });
+    }
+
     const byDate = new Map();
     for (const row of docs) {
       if (!row.date || !row.time) continue;
@@ -70,10 +77,20 @@ router.get('/fully-booked-dates', async (req, res) => {
     }
 
     const fullyBookedDates = [];
-    for (const [d, times] of byDate) {
-      if (times.size >= SLOT_COUNT) fullyBookedDates.push(d);
+    let maxSlotsInMonth = 0;
+    for (let day = 1; day <= lastDay; day++) {
+      const ymd = `${y}-${pad(m)}-${pad(day)}`;
+      const allowed = getCenterSlotsForYmd(center, ymd);
+      const n = allowed.length;
+      maxSlotsInMonth = Math.max(maxSlotsInMonth, n);
+      if (n === 0) continue;
+      const allowedSet = new Set(allowed);
+      const booked = byDate.get(ymd);
+      if (!booked) continue;
+      const takenInWindow = [...booked].filter((t) => allowedSet.has(t)).length;
+      if (takenInWindow >= n) fullyBookedDates.push(ymd);
     }
-    return res.json({ fullyBookedDates, slotCount: SLOT_COUNT });
+    return res.json({ fullyBookedDates, slotCount: maxSlotsInMonth });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Failed to load calendar availability' });
@@ -120,6 +137,19 @@ router.post('/', authRequired, async (req, res) => {
     }
 
     if (kind === 'center' && centerId && serviceId) {
+      const center = await CarWash.findById(String(centerId)).lean();
+      if (!center) {
+        return res.status(400).json({ message: 'Center not found' });
+      }
+      const allowed = getCenterSlotsForYmd(center, String(date));
+      if (allowed.length === 0) {
+        return res.status(400).json({ message: 'This center is closed on the selected date' });
+      }
+      const validTimes = new Set(allowed);
+      if (!validTimes.has(String(time))) {
+        return res.status(400).json({ message: 'Invalid time slot for this center' });
+      }
+
       const clash = await Booking.findOne({
         kind: 'center',
         centerId: String(centerId),
@@ -133,11 +163,11 @@ router.post('/', authRequired, async (req, res) => {
           message: 'This time slot is already booked for this service. Choose another time or date.',
         });
       }
-    }
-
-    const validTimes = new Set(getTimeSlots());
-    if (kind === 'center' && !validTimes.has(String(time))) {
-      return res.status(400).json({ message: 'Invalid time slot' });
+    } else if (kind === 'center') {
+      const validTimes = new Set(getTimeSlots());
+      if (!validTimes.has(String(time))) {
+        return res.status(400).json({ message: 'Invalid time slot' });
+      }
     }
 
     const recordStatus = legacyStatusToRecord(legacyStatus);
