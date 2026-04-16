@@ -8,9 +8,11 @@ import {
   Star,
 } from "lucide-react";
 
+import { CenterImage } from "@/components/CenterImage";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCenters } from "@/contexts/CentersContext";
+import { formatEgp } from "@/lib/currency";
 import { centerMinPrice } from "@/data/washCenters";
 import { findCenterById } from "@/lib/centerQueries";
 
@@ -65,17 +67,11 @@ export function CenterDetail() {
           <div
             className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-[0_8px_30px_rgba(0,0,0,0.06)]"
           >
-            {center.image?.trim() ? (
-              <img
-                src={center.image}
-                alt=""
-                className="aspect-[16/10] h-full w-full object-cover lg:min-h-[320px]"
-              />
-            ) : (
-              <div className="flex aspect-[16/10] min-h-[200px] w-full items-center justify-center bg-muted text-sm text-muted-foreground lg:min-h-[320px]">
-                No image
-              </div>
-            )}
+            <CenterImage
+              src={center.image}
+              alt=""
+              className="aspect-[16/10] h-full w-full object-cover lg:min-h-[320px]"
+            />
           </div>
 
           <Card className="flex flex-col rounded-xl border-border/60 shadow-[0_8px_30px_rgba(0,0,0,0.06)]">
@@ -98,7 +94,7 @@ export function CenterDetail() {
                   Starting from
                 </p>
                 <p className="mt-1 text-4xl font-bold tracking-tight text-primary">
-                  ${minPrice}
+                  {formatEgp(minPrice)}
                 </p>
               </div>
             </CardContent>
@@ -163,7 +159,9 @@ export function CenterDetail() {
                   {s.description}
                 </p>
                 <div className="mt-auto flex items-center justify-between gap-2">
-                  <span className="text-xl font-bold text-primary">${s.price}</span>
+                  <span className="text-xl font-bold text-primary">
+                    {formatEgp(s.price)}
+                  </span>
                   <span className="rounded-full bg-[hsl(195_80%_94%)] px-2.5 py-1 text-xs font-medium text-[hsl(210_100%_38%)]">
                     {s.durationMin} min
                   </span>

@@ -30,6 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/contexts/AuthContext";
+import { formatEgp } from "@/lib/currency";
 import type { BookingRecord, BookingRecordStatus } from "@/types";
 
 const STATUSES: BookingRecordStatus[] = [
@@ -138,7 +139,7 @@ export function AdminBookings() {
                         <TableCell>{b.serviceName}</TableCell>
                         <TableCell>{b.date}</TableCell>
                         <TableCell>{b.time}</TableCell>
-                        <TableCell>${b.price}</TableCell>
+                        <TableCell>{formatEgp(b.price)}</TableCell>
                         <TableCell className="align-top text-sm">
                           {b.notes?.trim() ? (
                             <p
@@ -269,7 +270,7 @@ export function AdminBookings() {
                         </TableCell>
                         <TableCell>{b.date}</TableCell>
                         <TableCell>{b.time}</TableCell>
-                        <TableCell>${b.price}</TableCell>
+                        <TableCell>{formatEgp(b.price)}</TableCell>
                         <TableCell className="align-top text-sm">
                           {b.notes?.trim() ? (
                             <p

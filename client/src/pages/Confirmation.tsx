@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { format, parseISO } from "date-fns";
 
 import { WashlyLogo } from "@/components/WashlyLogo";
+import { formatEgp } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Booking } from "@/types";
@@ -103,7 +104,7 @@ export function Confirmation() {
           </div>
           <div className="flex justify-between border-t pt-3 font-semibold">
             <span>Total</span>
-            <span className="text-primary">${booking.price}</span>
+            <span className="text-primary">{formatEgp(booking.price)}</span>
           </div>
         </CardContent>
       </Card>

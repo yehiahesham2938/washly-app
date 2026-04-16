@@ -2,7 +2,7 @@ import type { BookingRecord } from "@/types";
 
 import { getJSON } from "./client";
 
-/** Non-cancelled bookings for this center + service + date (times are UI labels, e.g. "9:00 AM"). */
+/** Active (pending/confirmed) bookings for this center + service + date; completed frees the slot. */
 export async function fetchOccupiedTimes(params: {
   centerId: string;
   serviceId: string;

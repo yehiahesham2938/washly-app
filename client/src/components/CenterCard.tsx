@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
 import { MapPin, Star } from "lucide-react";
 
+import { CenterImage } from "@/components/CenterImage";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { formatEgp } from "@/lib/currency";
 import { centerMinPrice } from "@/data/washCenters";
 import type { WashCenter } from "@/types";
 
@@ -16,13 +18,13 @@ export default function CenterCard({ center: c }: { center: WashCenter }) {
   return (
     <Card className="group overflow-hidden rounded-xl border-border/60 bg-card card-shadow transition-all hover:card-hover-shadow">
       <div className="relative aspect-[16/10] overflow-hidden rounded-t-xl">
-        <img
+        <CenterImage
           src={c.image}
           alt=""
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
         />
         <span className="absolute left-3 top-3 rounded-lg bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground shadow-sm">
-          From ${fromPrice}
+          From {formatEgp(fromPrice)}
         </span>
       </div>
       <CardContent className="space-y-4 p-5">

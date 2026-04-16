@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
+import { formatEgp } from "@/lib/currency";
 import type { Booking } from "@/types";
 
 function statusVariant(
@@ -122,7 +123,7 @@ export function Dashboard() {
                       <Badge variant={statusVariant(b.status)}>{b.status}</Badge>
                     </td>
                     <td className="px-4 py-3 text-right font-medium text-primary">
-                      ${b.price}
+                      {formatEgp(b.price)}
                     </td>
                   </tr>
                 ))

@@ -33,7 +33,12 @@ import {
 import { WashlyLogo } from "@/components/WashlyLogo";
 import { useAuth } from "@/contexts/AuthContext";
 import { getTimeSlots } from "@/lib/timeSlots";
-import { totalPrice, vehicleSurcharge } from "@/lib/pricing";
+import { formatEgp } from "@/lib/currency";
+import {
+  totalPrice,
+  vehicleSurcharge,
+  VEHICLE_SURCHARGE_EGP,
+} from "@/lib/pricing";
 import { fetchHomePackages } from "@/services/api/homePackages";
 import { cn } from "@/lib/utils";
 import type { HomePackage, VehicleType } from "@/types";
@@ -199,7 +204,7 @@ export function HomeBooking() {
                   </p>
                   <div className="mt-2 flex items-center gap-2">
                     <span className="text-lg font-bold text-primary">
-                      ${s.price}
+                      {formatEgp(s.price)}
                     </span>
                     <Badge variant="secondary" className="text-xs">
                       {s.durationMin} min
@@ -283,14 +288,21 @@ export function HomeBooking() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Sedan">Sedan</SelectItem>
-                  <SelectItem value="SUV">SUV (+$10)</SelectItem>
-                  <SelectItem value="Truck">Truck (+$15)</SelectItem>
-                  <SelectItem value="Van">Van (+$12)</SelectItem>
+                  <SelectItem value="SUV">
+                    SUV (+{formatEgp(VEHICLE_SURCHARGE_EGP.SUV)})
+                  </SelectItem>
+                  <SelectItem value="Truck">
+                    Truck (+{formatEgp(VEHICLE_SURCHARGE_EGP.Truck)})
+                  </SelectItem>
+                  <SelectItem value="Van">
+                    Van (+{formatEgp(VEHICLE_SURCHARGE_EGP.Van)})
+                  </SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                Add-on ${surcharge} applied to base package price ($
-                {service?.price ?? 0} + ${surcharge} = ${price}).
+                {formatEgp(service?.price ?? 0)} package +{" "}
+                {formatEgp(surcharge)} vehicle add-on = {formatEgp(price)}{" "}
+                total.
               </p>
             </div>
             <div className="space-y-2">
@@ -369,7 +381,7 @@ export function HomeBooking() {
         />
 
         <Button type="submit" size="lg" className="w-full">
-          Schedule Home Wash — ${price}
+          Schedule Home Wash — {formatEgp(price)}
         </Button>
         <p className="text-center text-xs text-muted-foreground">
           Need an account?{" "}

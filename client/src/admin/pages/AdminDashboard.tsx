@@ -1,10 +1,11 @@
 import { useMemo } from "react";
 import { format, parseISO } from "date-fns";
-import { DollarSign, Sparkles, TrendingUp, Users, Warehouse } from "lucide-react";
+import { Banknote, Sparkles, TrendingUp, Users, Warehouse } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
+import { formatEgp } from "@/lib/currency";
 import { useCenters } from "@/contexts/CentersContext";
 import type { BookingRecord } from "@/types";
 
@@ -90,8 +91,8 @@ export function AdminDashboard() {
         />
         <StatCard
           title="Revenue"
-          value={`$${revenue.toLocaleString()}`}
-          icon={DollarSign}
+          value={formatEgp(revenue)}
+          icon={Banknote}
         />
       </div>
 

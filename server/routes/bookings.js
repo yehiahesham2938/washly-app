@@ -4,11 +4,12 @@ const User = require('../models/User');
 const { authRequired } = require('../middleware/auth');
 const { adminOnly } = require('../middleware/admin');
 const { bookingToRecord, legacyStatusToRecord } = require('../utils/bookingMap');
+const { SLOT_BLOCKING_STATUSES } = require('../utils/availability');
 const { getTimeSlots, SLOT_COUNT } = require('../utils/timeSlots');
 
 const router = express.Router();
 
-/** Times already booked for this center service on this date (non-cancelled). */
+/** Times held by active (pending/confirmed) center bookings on this date. */
 router.get('/occupied-times', async (req, res) => {
   try {
     const { centerId, serviceId, date } = req.query;
@@ -20,7 +21,7 @@ router.get('/occupied-times', async (req, res) => {
       centerId: String(centerId),
       serviceId: String(serviceId),
       date: String(date),
-      status: { $nin: ['cancelled'] },
+      status: { $in: SLOT_BLOCKING_STATUSES },
     })
       .select('time')
       .lean();
@@ -56,7 +57,7 @@ router.get('/fully-booked-dates', async (req, res) => {
       centerId: String(centerId),
       serviceId: String(serviceId),
       date: { $gte: from, $lte: to },
-      status: { $nin: ['cancelled'] },
+      status: { $in: SLOT_BLOCKING_STATUSES },
     })
       .select('date time')
       .lean();
@@ -125,7 +126,7 @@ router.post('/', authRequired, async (req, res) => {
         serviceId: String(serviceId),
         date: String(date),
         time: String(time),
-        status: { $nin: ['cancelled'] },
+        status: { $in: SLOT_BLOCKING_STATUSES },
       }).lean();
       if (clash) {
         return res.status(409).json({

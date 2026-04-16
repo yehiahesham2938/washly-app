@@ -37,7 +37,12 @@ import {
   fetchFullyBookedDates,
   fetchOccupiedTimes,
 } from "@/services/api/bookings";
-import { totalPrice, vehicleSurcharge } from "@/lib/pricing";
+import { formatEgp } from "@/lib/currency";
+import {
+  totalPrice,
+  vehicleSurcharge,
+  VEHICLE_SURCHARGE_EGP,
+} from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 import type { VehicleType } from "@/types";
 
@@ -98,18 +103,29 @@ export function Booking() {
     }
     const ds = format(date, "yyyy-MM-dd");
     let cancelled = false;
-    fetchOccupiedTimes({ centerId, serviceId, date: ds })
-      .then(({ occupiedTimes: taken }) => {
-        if (!cancelled) {
-          setOccupiedTimes(taken);
-          setTime((prev) => (prev && taken.includes(prev) ? "" : prev));
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setOccupiedTimes([]);
-      });
+    const run = () => {
+      fetchOccupiedTimes({ centerId, serviceId, date: ds })
+        .then(({ occupiedTimes: taken }) => {
+          if (!cancelled) {
+            setOccupiedTimes(taken);
+            setTime((prev) => (prev && taken.includes(prev) ? "" : prev));
+          }
+        })
+        .catch(() => {
+          if (!cancelled) setOccupiedTimes([]);
+        });
+    };
+    run();
+    const onFocus = () => run();
+    const onVis = () => {
+      if (document.visibilityState === "visible") run();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVis);
     return () => {
       cancelled = true;
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVis);
     };
   }, [centerId, serviceId, date]);
 
@@ -212,10 +228,13 @@ export function Booking() {
               </div>
             </div>
             <div className="text-left sm:text-right">
-              <div className="text-2xl font-bold text-primary">${price}</div>
+              <div className="text-2xl font-bold text-primary">
+                {formatEgp(price)}
+              </div>
               {surcharge > 0 && (
                 <div className="text-xs text-muted-foreground">
-                  Service ${service.price} + ${surcharge} vehicle
+                  {formatEgp(service.price)} service + {formatEgp(surcharge)}{" "}
+                  vehicle add-on
                 </div>
               )}
             </div>
@@ -346,9 +365,15 @@ export function Booking() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Sedan">Sedan</SelectItem>
-                  <SelectItem value="SUV">SUV (+$10)</SelectItem>
-                  <SelectItem value="Truck">Truck (+$15)</SelectItem>
-                  <SelectItem value="Van">Van (+$12)</SelectItem>
+                  <SelectItem value="SUV">
+                    SUV (+{formatEgp(VEHICLE_SURCHARGE_EGP.SUV)})
+                  </SelectItem>
+                  <SelectItem value="Truck">
+                    Truck (+{formatEgp(VEHICLE_SURCHARGE_EGP.Truck)})
+                  </SelectItem>
+                  <SelectItem value="Van">
+                    Van (+{formatEgp(VEHICLE_SURCHARGE_EGP.Van)})
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -372,7 +397,7 @@ export function Booking() {
         />
 
         <Button type="submit" size="lg" className="w-full">
-          Confirm Booking — ${price}
+          Confirm Booking — {formatEgp(price)}
         </Button>
       </form>
     </div>

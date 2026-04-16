@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ImagePlus, Pencil, Plus, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
@@ -33,8 +33,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { CenterImage } from "@/components/CenterImage";
 import { useCenters } from "@/contexts/CentersContext";
 import { areas } from "@/data/washCenters";
+import { buildDailyHours, parseDailyHoursToTimeInputs } from "@/lib/dailyHours";
 import { newId } from "@/lib/id";
 import type { Area, Service, WashCenter } from "@/types";
 
@@ -102,7 +104,16 @@ export function AdminCenters() {
   const [editing, setEditing] = useState<WashCenter | null>(null);
   const [form, setForm] = useState<WashCenter>(defaultCenter());
   const [serviceForms, setServiceForms] = useState<ServiceForm[]>([]);
+  const [dailyOpen, setDailyOpen] = useState("09:00");
+  const [dailyClose, setDailyClose] = useState("18:00");
   const imageInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!dialogOpen) return;
+    const p = parseDailyHoursToTimeInputs(form.hours, form.hoursShort);
+    setDailyOpen(p.open);
+    setDailyClose(p.close);
+  }, [dialogOpen, form.id, form.hours, form.hoursShort]);
 
   function openCreate() {
     setEditing(null);
@@ -129,8 +140,11 @@ export function AdminCenters() {
       return;
     }
     const services = formsToServices(serviceForms);
+    const { hours, hoursShort } = buildDailyHours(dailyOpen, dailyClose);
     const nextCenter: WashCenter = {
       ...form,
+      hours,
+      hoursShort,
       services,
       reviewCount: form.reviewCount || 0,
     };
@@ -164,7 +178,7 @@ export function AdminCenters() {
       {
         id: newId(),
         name: "New service",
-        price: 25,
+        price: 200,
         duration: 30,
         description: "",
       },
@@ -232,7 +246,7 @@ export function AdminCenters() {
               className="overflow-hidden rounded-xl border-border/60 shadow-[0_8px_30px_rgba(0,0,0,0.04)]"
             >
               <div className="aspect-[16/10] overflow-hidden">
-                <img
+                <CenterImage
                   src={c.image}
                   alt=""
                   className="h-full w-full object-cover"
@@ -327,7 +341,7 @@ export function AdminCenters() {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
                 <div className="relative aspect-[16/10] w-full max-w-[280px] overflow-hidden rounded-lg border border-border bg-muted">
                   {form.image ? (
-                    <img
+                    <CenterImage
                       src={form.image}
                       alt=""
                       className="h-full w-full object-cover"
@@ -344,7 +358,7 @@ export function AdminCenters() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="absolute left-[413px] top-[283px] rounded-xl"
+                    className="rounded-xl"
                     onClick={() => imageInputRef.current?.click()}
                   >
                     <Upload className="mr-2 h-4 w-4" />
@@ -434,14 +448,41 @@ export function AdminCenters() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="hours">Hours</Label>
-              <Input
-                id="hours"
-                value={form.hours}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, hours: e.target.value }))
-                }
-              />
+              <Label>Daily hours (same every day)</Label>
+              <p className="text-xs text-muted-foreground">
+                Customers see this on the center page. Times use your browser&apos;s
+                24-hour clock.
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-1.5">
+                  <Label htmlFor="open-time" className="text-xs font-normal">
+                    Opens
+                  </Label>
+                  <Input
+                    id="open-time"
+                    type="time"
+                    value={dailyOpen}
+                    onChange={(e) => setDailyOpen(e.target.value)}
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="close-time" className="text-xs font-normal">
+                    Closes
+                  </Label>
+                  <Input
+                    id="close-time"
+                    type="time"
+                    value={dailyClose}
+                    onChange={(e) => setDailyClose(e.target.value)}
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Preview:{" "}
+                <span className="font-medium text-foreground">
+                  {buildDailyHours(dailyOpen, dailyClose).hours}
+                </span>
+              </p>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="desc">Description</Label>
@@ -479,7 +520,7 @@ export function AdminCenters() {
                       <div className="flex gap-2">
                         <Input
                           type="number"
-                          placeholder="Price"
+                          placeholder="Price (EGP)"
                           value={s.price}
                           onChange={(e) =>
                             updateService(i, {
