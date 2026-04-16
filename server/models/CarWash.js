@@ -10,6 +10,9 @@ const AREA_ENUM = [
   'Westside',
 ];
 
+/** Matches client `Weekday` */
+const WEEKDAY_ENUM = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
 /** Matches client `Service` */
 const serviceSchema = new mongoose.Schema(
   {
@@ -36,6 +39,16 @@ const carWashSchema = new mongoose.Schema(
     phone: { type: String, required: true, trim: true },
     hours: { type: String, required: true },
     hoursShort: { type: String, trim: true },
+    workingDays: {
+      type: [{ type: String, enum: WEEKDAY_ENUM }],
+      default: undefined,
+      validate: {
+        validator(arr) {
+          return arr == null || arr.length > 0;
+        },
+        message: 'workingDays must include at least one day when set',
+      },
+    },
     description: { type: String, trim: true, default: '' },
     services: { type: [serviceSchema], default: [] },
     createdAt: { type: Date, default: Date.now },

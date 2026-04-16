@@ -14,6 +14,16 @@ export interface Service {
   price: number;
 }
 
+/** Open days for the center (same open/close window on each). */
+export type Weekday =
+  | "Mon"
+  | "Tue"
+  | "Wed"
+  | "Thu"
+  | "Fri"
+  | "Sat"
+  | "Sun";
+
 export interface WashCenter {
   id: string;
   name: string;
@@ -29,6 +39,8 @@ export interface WashCenter {
   hours: string;
   /** Short hours for metadata row, e.g. "8:00 AM – 8:00 PM" */
   hoursShort?: string;
+  /** Which days of the week the center is open (optional for legacy data). */
+  workingDays?: Weekday[];
   /** Detail page blurb */
   description?: string;
   services: Service[];

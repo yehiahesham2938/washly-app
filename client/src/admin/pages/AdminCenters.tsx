@@ -36,9 +36,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { CenterImage } from "@/components/CenterImage";
 import { useCenters } from "@/contexts/CentersContext";
 import { areas } from "@/data/washCenters";
-import { buildDailyHours, parseDailyHoursToTimeInputs } from "@/lib/dailyHours";
+import {
+  ALL_WEEKDAYS,
+  buildCenterSchedule,
+  DAY_ORDER,
+  parseDailyHoursToTimeInputs,
+  parseWorkingDaysFromHours,
+  sortWeekdays,
+} from "@/lib/dailyHours";
 import { newId } from "@/lib/id";
-import type { Area, Service, WashCenter } from "@/types";
+import type { Area, Service, WashCenter, Weekday } from "@/types";
 
 const AREA_OPTIONS = areas.filter((a) => a !== "All") as Area[];
 
@@ -94,6 +101,7 @@ const defaultCenter = (): WashCenter => ({
   phone: "",
   hours: "Mon–Sun: 9:00 AM – 6:00 PM",
   hoursShort: "9:00 AM – 6:00 PM",
+  workingDays: [...ALL_WEEKDAYS],
   description: "",
   services: [],
 });
@@ -106,6 +114,7 @@ export function AdminCenters() {
   const [serviceForms, setServiceForms] = useState<ServiceForm[]>([]);
   const [dailyOpen, setDailyOpen] = useState("09:00");
   const [dailyClose, setDailyClose] = useState("18:00");
+  const [workingDays, setWorkingDays] = useState<Weekday[]>([...ALL_WEEKDAYS]);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -113,7 +122,12 @@ export function AdminCenters() {
     const p = parseDailyHoursToTimeInputs(form.hours, form.hoursShort);
     setDailyOpen(p.open);
     setDailyClose(p.close);
-  }, [dialogOpen, form.id, form.hours, form.hoursShort]);
+    const wd =
+      form.workingDays && form.workingDays.length > 0
+        ? sortWeekdays(form.workingDays)
+        : parseWorkingDaysFromHours(form.hours);
+    setWorkingDays(wd.length ? wd : [...ALL_WEEKDAYS]);
+  }, [dialogOpen, form.id, form.hours, form.hoursShort, form.workingDays]);
 
   function openCreate() {
     setEditing(null);
@@ -140,11 +154,21 @@ export function AdminCenters() {
       return;
     }
     const services = formsToServices(serviceForms);
-    const { hours, hoursShort } = buildDailyHours(dailyOpen, dailyClose);
+    if (workingDays.length === 0) {
+      toast.error("Select at least one working day");
+      return;
+    }
+    const sortedDays = sortWeekdays(workingDays);
+    const { hours, hoursShort } = buildCenterSchedule(
+      sortedDays,
+      dailyOpen,
+      dailyClose
+    );
     const nextCenter: WashCenter = {
       ...form,
       hours,
       hoursShort,
+      workingDays: sortedDays,
       services,
       reviewCount: form.reviewCount || 0,
     };
@@ -448,11 +472,54 @@ export function AdminCenters() {
               />
             </div>
             <div className="grid gap-2">
-              <Label>Daily hours (same every day)</Label>
+              <Label>Hours</Label>
               <p className="text-xs text-muted-foreground">
-                Customers see this on the center page. Times use your browser&apos;s
-                24-hour clock.
+                Choose open days and daily open/close times. Customers see the full
+                line on the center page. Times use your browser&apos;s 24-hour clock.
               </p>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="rounded-xl"
+                  onClick={() => setWorkingDays(DAY_ORDER.slice(0, 5))}
+                >
+                  Weekdays
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="rounded-xl"
+                  onClick={() => setWorkingDays([...ALL_WEEKDAYS])}
+                >
+                  Every day
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {DAY_ORDER.map((d) => (
+                  <label
+                    key={d}
+                    className="flex cursor-pointer items-center gap-2 rounded-lg border border-border/80 px-2.5 py-1.5 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5"
+                  >
+                    <input
+                      type="checkbox"
+                      className="rounded border-border"
+                      checked={workingDays.includes(d)}
+                      onChange={() => {
+                        setWorkingDays((prev) => {
+                          if (prev.includes(d)) {
+                            return prev.filter((x) => x !== d);
+                          }
+                          return sortWeekdays([...prev, d]);
+                        });
+                      }}
+                    />
+                    {d}
+                  </label>
+                ))}
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-1.5">
                   <Label htmlFor="open-time" className="text-xs font-normal">
@@ -479,9 +546,15 @@ export function AdminCenters() {
               </div>
               <p className="text-xs text-muted-foreground">
                 Preview:{" "}
-                <span className="font-medium text-foreground">
-                  {buildDailyHours(dailyOpen, dailyClose).hours}
-                </span>
+                {workingDays.length === 0 ? (
+                  <span className="font-medium text-destructive">
+                    Select at least one working day
+                  </span>
+                ) : (
+                  <span className="font-medium text-foreground">
+                    {buildCenterSchedule(workingDays, dailyOpen, dailyClose).hours}
+                  </span>
+                )}
               </p>
             </div>
             <div className="grid gap-2">

@@ -48,6 +48,7 @@ const carWashSeedData = [
     phone: '+1 555-0101',
     hours: 'Mon–Sun: 8:00 AM – 8:00 PM',
     hoursShort: '8:00 AM – 8:00 PM',
+    workingDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     description:
       'Premium car wash & detailing center with state-of-the-art equipment and eco-friendly products.',
     services: [
@@ -95,6 +96,7 @@ const carWashSeedData = [
     phone: '+1 555-0102',
     hours: 'Mon–Sat: 9:00 AM – 7:00 PM',
     hoursShort: '9:00 AM – 7:00 PM',
+    workingDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
     description:
       'Friendly hand-wash service with convenient mall parking and fast turnaround.',
     services: [
@@ -142,6 +144,7 @@ const carWashSeedData = [
     phone: '+1 555-0103',
     hours: 'Mon–Sun: 7:00 AM – 9:00 PM',
     hoursShort: '7:00 AM – 9:00 PM',
+    workingDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     description:
       'Specialists in hand finishing and interior deep cleaning for luxury vehicles.',
     services: [
@@ -182,6 +185,7 @@ const carWashSeedData = [
     phone: '(555) 555-2210',
     hours: 'Tue–Sun: 10:00 AM – 6:00 PM',
     hoursShort: '10:00 AM – 6:00 PM',
+    workingDays: ['Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     description:
       'Hand-finished washes for delicate paint, SUVs, and pet-hair cleanup with Northside parking.',
     services: [
@@ -222,6 +226,7 @@ const carWashSeedData = [
     phone: '(555) 678-3344',
     hours: 'Mon–Sun: 8:00 AM – 8:00 PM',
     hoursShort: '8:00 AM – 8:00 PM',
+    workingDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     description:
       'Low-water biodegradable wash, glass & trim care, and ozone odor treatment.',
     services: [
@@ -269,6 +274,7 @@ const carWashSeedData = [
     phone: '(555) 900-7722',
     hours: 'Mon–Sun: 6:00 AM – 11:00 PM',
     hoursShort: '6:00 AM – 11:00 PM',
+    workingDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     description:
       'High-volume tunnel wash with underbody blast, wax spray, and monthly unlimited plans.',
     services: [
@@ -309,6 +315,7 @@ const carWashSeedData = [
     phone: '(555) 111-4455',
     hours: 'Wed–Mon: 9:00 AM – 5:00 PM',
     hoursShort: '9:00 AM – 5:00 PM',
+    workingDays: ['Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'Mon'],
     description:
       'Family vans, third-row vacuuming, and lite paint correction for suburban commuters.',
     services: [

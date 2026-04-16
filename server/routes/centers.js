@@ -50,6 +50,7 @@ router.post('/', authRequired, adminOnly, async (req, res) => {
       phone,
       hours,
       hoursShort,
+      workingDays,
       description = '',
       services = [],
     } = body;
@@ -63,7 +64,7 @@ router.post('/', authRequired, adminOnly, async (req, res) => {
       return res.status(409).json({ message: 'A center with this id already exists' });
     }
 
-    await CarWash.create({
+    const createPayload = {
       _id,
       name: String(name).trim(),
       image: String(image).trim(),
@@ -77,7 +78,12 @@ router.post('/', authRequired, adminOnly, async (req, res) => {
       hoursShort: hoursShort ? String(hoursShort) : undefined,
       description: String(description),
       services,
-    });
+    };
+    if (Array.isArray(workingDays) && workingDays.length > 0) {
+      createPayload.workingDays = workingDays;
+    }
+
+    await CarWash.create(createPayload);
 
     const doc = await CarWash.findById(_id);
     return res.status(201).json(formatCenter(doc));
@@ -104,6 +110,7 @@ router.put('/:id', authRequired, adminOnly, async (req, res) => {
       phone,
       hours,
       hoursShort,
+      workingDays,
       description,
       services,
     } = body;
@@ -119,6 +126,9 @@ router.put('/:id', authRequired, adminOnly, async (req, res) => {
     if (phone !== undefined) update.phone = String(phone).trim();
     if (hours !== undefined) update.hours = String(hours);
     if (hoursShort !== undefined) update.hoursShort = hoursShort ? String(hoursShort) : '';
+    if (workingDays !== undefined) {
+      update.workingDays = Array.isArray(workingDays) ? workingDays : [];
+    }
     if (description !== undefined) update.description = String(description);
     if (services !== undefined) update.services = services;
 
