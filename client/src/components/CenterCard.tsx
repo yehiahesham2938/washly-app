@@ -5,11 +5,11 @@ import { CenterImage } from "@/components/CenterImage";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatEgp } from "@/lib/currency";
-import { centerMinPrice } from "@/data/washCenters";
+import { lowestServicePriceAtCenter } from "@/data/washCenters";
 import type { WashCenter } from "@/types";
 
 export default function CenterCard({ center: c }: { center: WashCenter }) {
-  const fromPrice = centerMinPrice(c);
+  const fromPrice = lowestServicePriceAtCenter(c);
   const locationText = c.locationLine ?? c.address;
   const tagNames = c.services.map((s) => s.name);
   const showTags = tagNames.slice(0, 3);

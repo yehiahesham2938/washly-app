@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCenters } from "@/contexts/CentersContext";
 import { formatEgp } from "@/lib/currency";
-import { centerMinPrice } from "@/data/washCenters";
+import { lowestServicePriceForServices } from "@/data/washCenters";
 import { findCenterById } from "@/lib/centerQueries";
 
 const QUICK_INFO_ITEMS = [
@@ -39,7 +39,6 @@ export function CenterDetail() {
     );
   }
 
-  const minPrice = centerMinPrice(center);
   const locationText = center.locationLine ?? center.address ?? "";
   const hoursLabel = center.hoursShort ?? center.hours ?? "";
   const blurb =
@@ -52,6 +51,7 @@ export function CenterDetail() {
   const rating = center.rating ?? 0;
   const reviewCount = center.reviewCount ?? 0;
   const services = center.services ?? [];
+  const minPrice = lowestServicePriceForServices(services);
 
   return (
     <div className="bg-background pb-16">

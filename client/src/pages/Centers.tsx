@@ -11,14 +11,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCenters } from "@/contexts/CentersContext";
-import { areas, centerMinPrice } from "@/data/washCenters";
-
-type SortKey = "rating" | "price" | "reviews";
+import { areas } from "@/data/washCenters";
+import {
+  type CenterSortKey,
+  compareWashCentersBySort,
+} from "@/lib/centerQueries";
 
 export function Centers() {
   const { centers, loading, error } = useCenters();
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState<SortKey>("rating");
+  const [sort, setSort] = useState<CenterSortKey>("rating");
   const [area, setArea] = useState<(typeof areas)[number]>("All");
 
   const filtered = useMemo(() => {
@@ -37,13 +39,7 @@ export function Centers() {
 
   const sorted = useMemo(() => {
     const list = [...filtered];
-    list.sort((a, b) => {
-      if (sort === "rating") return b.rating - a.rating;
-      if (sort === "price")
-        return centerMinPrice(a) - centerMinPrice(b);
-      if (sort === "reviews") return b.reviewCount - a.reviewCount;
-      return 0;
-    });
+    list.sort((a, b) => compareWashCentersBySort(a, b, sort));
     return list;
   }, [filtered, sort]);
 
@@ -72,14 +68,15 @@ export function Centers() {
         </div>
         <Select
           value={sort}
-          onValueChange={(v) => setSort(v as SortKey)}
+          onValueChange={(v) => setSort(v as CenterSortKey)}
         >
           <SelectTrigger className="w-full sm:w-48">
             <SelectValue placeholder="Sort by" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="rating">Highest Rated</SelectItem>
-            <SelectItem value="price">Lowest Price</SelectItem>
+            <SelectItem value="price_low">Lowest Price</SelectItem>
+            <SelectItem value="price_high">Highest Price</SelectItem>
             <SelectItem value="reviews">Most Reviews</SelectItem>
           </SelectContent>
         </Select>
