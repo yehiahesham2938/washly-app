@@ -540,9 +540,9 @@ export const PaymentMethodSection = forwardRef<
 
   const options = [
 
-    { val: "card" as const, label: "Credit Card", icon: CreditCard },
-
     { val: "cash" as const, label: cashLabel, icon: Banknote },
+
+    { val: "card" as const, label: "Credit Card", icon: CreditCard },
 
     { val: "wallet" as const, label: "Digital wallet", icon: Wallet },
 

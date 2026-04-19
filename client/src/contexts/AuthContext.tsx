@@ -182,7 +182,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     ) => {
       if (!user) throw new Error("Not authenticated");
-      const statusLegacy = partial.status ?? "Confirmed";
+      const statusLegacy = partial.status ?? "Pending";
       const body: Record<string, unknown> = {
         kind: partial.kind,
         centerId: partial.centerId,

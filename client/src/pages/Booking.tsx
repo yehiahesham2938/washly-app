@@ -63,7 +63,7 @@ export function Booking() {
   const [calendarMonth, setCalendarMonth] = useState(() => new Date());
   const [date, setDate] = useState<Date | undefined>();
   const [time, setTime] = useState("");
-  const [payment, setPayment] = useState<BookingPaymentMethod>("card");
+  const [payment, setPayment] = useState<BookingPaymentMethod>("cash");
   const paymentSectionRef = useRef<PaymentMethodSectionHandle>(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -212,7 +212,7 @@ export function Booking() {
         vehicle,
         notes: composeNotesForBooking(),
         price,
-        status: "Confirmed",
+        status: "Pending",
         paymentMethod: paymentMethodToApi(payment),
         contactName: name.trim(),
         contactPhone: phone.trim(),

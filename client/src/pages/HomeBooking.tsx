@@ -52,7 +52,7 @@ export function HomeBooking() {
   const [selectedService, setSelectedService] = useState("");
   const [date, setDate] = useState<Date | undefined>();
   const [time, setTime] = useState("");
-  const [payment, setPayment] = useState<BookingPaymentMethod>("card");
+  const [payment, setPayment] = useState<BookingPaymentMethod>("cash");
   const paymentSectionRef = useRef<PaymentMethodSectionHandle>(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");

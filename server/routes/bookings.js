@@ -170,7 +170,10 @@ router.post('/', authRequired, async (req, res) => {
       }
     }
 
-    const recordStatus = legacyStatusToRecord(legacyStatus);
+    const recordStatus =
+      kind === 'center'
+        ? 'pending'
+        : legacyStatusToRecord(legacyStatus);
 
     const doc = await Booking.create({
       user: req.userId,

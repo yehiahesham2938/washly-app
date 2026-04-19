@@ -68,10 +68,16 @@ export function Confirmation() {
           </svg>
         </div>
         <h1 className="mt-6 text-2xl font-bold tracking-tight">
-          Booking confirmed
+          {booking.status === "Pending"
+            ? "Booking submitted"
+            : "Booking confirmed"}
         </h1>
         <p className="mt-2 text-muted-foreground">
-          You&apos;re all set. We&apos;ve saved your booking to your account.
+          {booking.status === "Pending"
+            ? booking.kind === "center"
+              ? "We've saved your request. It stays pending until an administrator confirms it; you can track status on your dashboard."
+              : "We've saved your booking to your account. You can track status on your dashboard."
+            : "You're all set. We've saved your booking to your account."}
         </p>
       </div>
 

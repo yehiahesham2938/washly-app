@@ -74,10 +74,11 @@ export function Dashboard() {
       <h2 className="mb-4 mt-12 text-xl font-semibold">Booking history</h2>
       <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-card">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] text-left text-sm">
+          <table className="w-full min-w-[760px] text-left text-sm">
             <thead className="border-b bg-muted/50 text-muted-foreground">
               <tr>
                 <th className="px-4 py-3 font-medium">Service</th>
+                <th className="px-4 py-3 font-medium">Center</th>
                 <th className="px-4 py-3 font-medium">Type</th>
                 <th className="px-4 py-3 font-medium">Date</th>
                 <th className="px-4 py-3 font-medium">Time</th>
@@ -89,7 +90,7 @@ export function Dashboard() {
               {sorted.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="px-4 py-10 text-center text-muted-foreground"
                   >
                     No bookings yet. Explore{" "}
@@ -106,6 +107,11 @@ export function Dashboard() {
                     className="border-b border-border/60 last:border-0"
                   >
                     <td className="px-4 py-3 font-medium">{b.serviceName}</td>
+                    <td className="max-w-[200px] px-4 py-3 text-muted-foreground">
+                      {b.kind === "center"
+                        ? b.centerName ?? "—"
+                        : "—"}
+                    </td>
                     <td className="px-4 py-3">
                       <Badge
                         variant={
