@@ -64,14 +64,32 @@ export function CenterDetail() {
         </Button>
 
         <div className="grid gap-6 lg:grid-cols-2 lg:items-stretch">
-          <div
-            className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-[0_8px_30px_rgba(0,0,0,0.06)]"
-          >
-            <CenterImage
-              src={center.image}
-              alt=""
-              className="aspect-[16/10] h-full w-full object-cover lg:min-h-[320px]"
-            />
+          <div className="space-y-3">
+            <div
+              className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-[0_8px_30px_rgba(0,0,0,0.06)]"
+            >
+              <CenterImage
+                src={center.image}
+                alt=""
+                className="aspect-[16/10] h-full w-full object-cover lg:min-h-[320px]"
+              />
+            </div>
+            {(center.gallery?.length ?? 0) > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {center.gallery!.map((src, i) => (
+                  <div
+                    key={`${center.id}-g-${i}`}
+                    className="h-20 w-28 overflow-hidden rounded-lg border border-border/60"
+                  >
+                    <CenterImage
+                      src={src}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </div>
 
           <Card className="flex flex-col rounded-xl border-border/60 shadow-[0_8px_30px_rgba(0,0,0,0.06)]">

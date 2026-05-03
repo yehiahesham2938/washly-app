@@ -36,6 +36,11 @@ export async function fetchMyBookings(): Promise<BookingRecord[]> {
   return getJSON<BookingRecord[]>("/api/bookings/me");
 }
 
+/** Center bookings for locations you own (vendor) */
+export async function fetchBookingsForMyCenters(): Promise<BookingRecord[]> {
+  return getJSON<BookingRecord[]>("/api/bookings/for-my-centers");
+}
+
 export async function createBooking(
   body: Record<string, unknown>
 ): Promise<BookingRecord> {

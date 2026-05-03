@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import {
   Building2,
   CalendarCheck,
+  ClipboardList,
   LayoutDashboard,
   LogOut,
   Users,
@@ -15,6 +16,7 @@ import { cn } from "@/lib/utils";
 const items = [
   { to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/admin/centers", label: "Centers", icon: Building2 },
+  { to: "/admin/vendor-requests", label: "Vendor requests", icon: ClipboardList },
   { to: "/admin/bookings", label: "Bookings", icon: CalendarCheck },
   { to: "/admin/users", label: "Users", icon: Users },
 ] as const;

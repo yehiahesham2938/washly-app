@@ -107,6 +107,27 @@ router.get('/me', authRequired, async (req, res) => {
   }
 });
 
+/** Center bookings for locations the current user owns (vendor dashboard). */
+router.get('/for-my-centers', authRequired, async (req, res) => {
+  try {
+    const owned = await CarWash.find({ ownerUserId: req.userId })
+      .select('_id')
+      .lean();
+    const ids = owned.map((c) => String(c._id));
+    if (ids.length === 0) {
+      return res.json([]);
+    }
+    const list = await Booking.find({
+      kind: 'center',
+      centerId: { $in: ids },
+    }).sort({ createdAt: -1 });
+    res.json(list.map((d) => bookingToRecord(d)));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to load center bookings' });
+  }
+});
+
 router.post('/', authRequired, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
@@ -213,7 +234,7 @@ router.get('/', authRequired, adminOnly, async (req, res) => {
   }
 });
 
-router.patch('/:id', authRequired, adminOnly, async (req, res) => {
+router.patch('/:id', authRequired, async (req, res) => {
   try {
     const { status } = req.body ?? {};
     if (!status) {
@@ -223,6 +244,26 @@ router.patch('/:id', authRequired, adminOnly, async (req, res) => {
     if (!allowed.includes(status)) {
       return res.status(400).json({ message: 'Invalid status' });
     }
+
+    const existing = await Booking.findById(req.params.id);
+    if (!existing) return res.status(404).json({ message: 'Booking not found' });
+
+    let mayEdit = req.userRole === 'admin';
+    if (!mayEdit) {
+      const u = await User.findById(req.userId).select('role').lean();
+      mayEdit = u?.role === 'admin';
+    }
+    if (!mayEdit && existing.kind === 'center' && existing.centerId) {
+      const owned = await CarWash.findOne({
+        _id: String(existing.centerId),
+        ownerUserId: req.userId,
+      }).lean();
+      mayEdit = Boolean(owned);
+    }
+    if (!mayEdit) {
+      return res.status(403).json({ message: 'Not allowed to update this booking' });
+    }
+
     const doc = await Booking.findByIdAndUpdate(
       req.params.id,
       { status },

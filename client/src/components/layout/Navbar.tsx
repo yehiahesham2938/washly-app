@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, LogOut, Menu, User, X } from "lucide-react";
+import { LayoutDashboard, LogOut, Menu, Store, User, X } from "lucide-react";
 
 import { WashlyLogo } from "@/components/WashlyLogo";
 
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
+import { fetchMyVendorCenters } from "@/services/api/centers";
 
 const links = [
   { to: "/", label: "Home" },
@@ -29,9 +30,28 @@ function isNavActive(pathname: string, to: string) {
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [hasVendorCenters, setHasVendorCenters] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+
+  useEffect(() => {
+    if (!user || user.role === "admin") {
+      setHasVendorCenters(false);
+      return;
+    }
+    let cancelled = false;
+    fetchMyVendorCenters()
+      .then((list) => {
+        if (!cancelled) setHasVendorCenters(list.length > 0);
+      })
+      .catch(() => {
+        if (!cancelled) setHasVendorCenters(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, user?.role, location.pathname]);
 
   const handleLogout = () => {
     logout();
@@ -62,6 +82,35 @@ export function Navbar() {
               {link.label}
             </Link>
           ))}
+          {user && user.role !== "admin" ? (
+            <>
+              <Link
+                to="/become-vendor"
+                className={cn(
+                  "text-sm font-medium transition-colors hover:text-primary",
+                  isNavActive(location.pathname, "/become-vendor")
+                    ? "text-primary"
+                    : "text-muted-foreground"
+                )}
+              >
+                Become a vendor
+              </Link>
+              {hasVendorCenters ? (
+                <Link
+                  to="/my-centers"
+                  className={cn(
+                    "inline-flex items-center gap-1 text-sm font-medium transition-colors hover:text-primary",
+                    isNavActive(location.pathname, "/my-centers")
+                      ? "text-primary"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  <Store className="h-3.5 w-3.5" />
+                  My wash centers
+                </Link>
+              ) : null}
+            </>
+          ) : null}
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -132,6 +181,36 @@ export function Navbar() {
               {link.label}
             </Link>
           ))}
+          {user && user.role !== "admin" ? (
+            <>
+              <Link
+                to="/become-vendor"
+                onClick={() => setMobileOpen(false)}
+                className={cn(
+                  "block py-2 text-sm font-medium transition-colors hover:text-primary",
+                  isNavActive(location.pathname, "/become-vendor")
+                    ? "text-primary"
+                    : "text-muted-foreground"
+                )}
+              >
+                Become a vendor
+              </Link>
+              {hasVendorCenters ? (
+                <Link
+                  to="/my-centers"
+                  onClick={() => setMobileOpen(false)}
+                  className={cn(
+                    "block py-2 text-sm font-medium transition-colors hover:text-primary",
+                    isNavActive(location.pathname, "/my-centers")
+                      ? "text-primary"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  My wash centers
+                </Link>
+              ) : null}
+            </>
+          ) : null}
           {user ? (
             <>
               {user.role === "admin" && (

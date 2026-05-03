@@ -8,6 +8,7 @@ function resolveApiBase(): string {
 }
 
 const BASE = resolveApiBase();
+const REQUEST_TIMEOUT_MS = 20_000;
 
 export const TOKEN_KEY = "washly_token";
 
@@ -56,7 +57,21 @@ export async function apiRequest(
   ) {
     headers.set("Content-Type", "application/json");
   }
-  return fetch(url, { ...init, headers });
+  const ctl = new AbortController();
+  const timeout = window.setTimeout(() => ctl.abort(), REQUEST_TIMEOUT_MS);
+  const signal = init.signal
+    ? AbortSignal.any([init.signal, ctl.signal])
+    : ctl.signal;
+  try {
+    return await fetch(url, { ...init, headers, signal });
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new Error("Request timed out. Check if the API server is running.");
+    }
+    throw err;
+  } finally {
+    window.clearTimeout(timeout);
+  }
 }
 
 export async function getJSON<T>(path: string, init?: RequestInit): Promise<T> {

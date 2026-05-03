@@ -9,6 +9,7 @@ const centersRoutes = require('./routes/centers');
 const homePackagesRoutes = require('./routes/homePackages');
 const bookingsRoutes = require('./routes/bookings');
 const usersRoutes = require('./routes/users');
+const vendorRequestsRoutes = require('./routes/vendorRequests');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -36,6 +37,7 @@ app.use('/api/centers', centersRoutes);
 app.use('/api/home-packages', homePackagesRoutes);
 app.use('/api/bookings', bookingsRoutes);
 app.use('/api/users', usersRoutes);
+app.use('/api/vendor-requests', vendorRequestsRoutes);
 
 // Catch async failures / rejects that bypass route try/catch (Express 5)
 app.use((err, req, res, next) => {

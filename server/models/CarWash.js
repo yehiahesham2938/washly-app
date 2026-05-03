@@ -51,6 +51,10 @@ const carWashSchema = new mongoose.Schema(
     },
     description: { type: String, trim: true, default: '' },
     services: { type: [serviceSchema], default: [] },
+    /** Set when a vendor request is approved; admin-created centers omit this. */
+    ownerUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    /** Extra photos beyond `image` (data URLs or remote URLs). */
+    gallery: { type: [String], default: undefined },
     createdAt: { type: Date, default: Date.now },
   },
   {
@@ -60,6 +64,12 @@ const carWashSchema = new mongoose.Schema(
         ret.id = ret._id;
         delete ret._id;
         delete ret.__v;
+        if (ret.ownerUserId) {
+          ret.ownerUserId =
+            typeof ret.ownerUserId === 'object' && ret.ownerUserId.toString
+              ? ret.ownerUserId.toString()
+              : String(ret.ownerUserId);
+        }
         return ret;
       },
     },

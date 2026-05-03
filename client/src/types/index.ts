@@ -44,6 +44,25 @@ export interface WashCenter {
   /** Detail page blurb */
   description?: string;
   services: Service[];
+  /** Extra photos (e.g. vendor submissions). */
+  gallery?: string[];
+  /** Present when this listing was published from an approved vendor request. */
+  ownerUserId?: string;
+}
+
+export type VendorRequestStatus = "pending" | "approved" | "rejected";
+
+/** Vendor listing request (admin queue + vendor history). */
+export interface VendorCenterRequest {
+  id: string;
+  userId: string;
+  status: VendorRequestStatus;
+  applicantSnapshot: { name: string; email: string; phone: string };
+  centerDraft: WashCenter;
+  gallery: string[];
+  publishedCenterId?: string;
+  decidedAt?: string;
+  createdAt: string;
 }
 
 export type BookingStatus =

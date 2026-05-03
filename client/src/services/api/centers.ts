@@ -6,6 +6,11 @@ export async function fetchCenters(): Promise<WashCenter[]> {
   return getJSON<WashCenter[]>("/api/centers");
 }
 
+/** Centers you own after an approved vendor request */
+export async function fetchMyVendorCenters(): Promise<WashCenter[]> {
+  return getJSON<WashCenter[]>("/api/centers/mine/vendor");
+}
+
 export async function createCenter(center: WashCenter): Promise<WashCenter> {
   return getJSON<WashCenter>("/api/centers", {
     method: "POST",

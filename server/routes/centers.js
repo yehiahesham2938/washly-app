@@ -14,6 +14,17 @@ function formatCenter(doc) {
   return doc.toJSON ? doc.toJSON() : doc;
 }
 
+/** Centers owned by the current user (approved vendor listings). */
+router.get('/mine/vendor', authRequired, async (req, res) => {
+  try {
+    const list = await CarWash.find({ ownerUserId: req.userId }).sort({ _id: 1 });
+    res.json(list.map((d) => formatCenter(d)));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to load your centers' });
+  }
+});
+
 router.get('/', async (req, res) => {
   try {
     const list = await CarWash.find().sort({ _id: 1 });
@@ -53,6 +64,7 @@ router.post('/', authRequired, adminOnly, async (req, res) => {
       workingDays,
       description = '',
       services = [],
+      gallery,
     } = body;
 
     if (!name?.trim() || !image?.trim() || !area || !address?.trim() || !phone?.trim() || !hours) {
@@ -81,6 +93,9 @@ router.post('/', authRequired, adminOnly, async (req, res) => {
     };
     if (Array.isArray(workingDays) && workingDays.length > 0) {
       createPayload.workingDays = workingDays;
+    }
+    if (Array.isArray(gallery) && gallery.length > 0) {
+      createPayload.gallery = gallery;
     }
 
     await CarWash.create(createPayload);
@@ -113,6 +128,7 @@ router.put('/:id', authRequired, adminOnly, async (req, res) => {
       workingDays,
       description,
       services,
+      gallery,
     } = body;
 
     const update = {};
@@ -131,6 +147,9 @@ router.put('/:id', authRequired, adminOnly, async (req, res) => {
     }
     if (description !== undefined) update.description = String(description);
     if (services !== undefined) update.services = services;
+    if (gallery !== undefined) {
+      update.gallery = Array.isArray(gallery) && gallery.length > 0 ? gallery : [];
+    }
 
     const doc = await CarWash.findByIdAndUpdate(req.params.id, update, {
       new: true,
