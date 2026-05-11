@@ -23,7 +23,7 @@ import {
   parseWorkingDaysFromHours,
   sortWeekdays,
 } from "@/lib/dailyHours";
-import type { Area, WashCenter, Weekday } from "@/types";
+import type { Area, OfferPackage, WashCenter, Weekday } from "@/types";
 
 const AREA_OPTIONS = areas.filter((a) => a !== "All") as Area[];
 
@@ -36,6 +36,14 @@ export type ServiceFormRow = {
   name: string;
   price: number;
   duration: number;
+  description: string;
+};
+
+export type OfferFormRow = {
+  id: string;
+  title: string;
+  washCount: number;
+  discountPercent: number;
   description: string;
 };
 
@@ -53,6 +61,8 @@ type Props = {
   setForm: React.Dispatch<React.SetStateAction<WashCenter>>;
   serviceForms: ServiceFormRow[];
   setServiceForms: React.Dispatch<React.SetStateAction<ServiceFormRow[]>>;
+  offerForms: OfferFormRow[];
+  setOfferForms: React.Dispatch<React.SetStateAction<OfferFormRow[]>>;
   dailyOpen: string;
   setDailyOpen: (v: string) => void;
   dailyClose: string;
@@ -70,6 +80,8 @@ export function WashCenterEditorForm({
   setForm,
   serviceForms,
   setServiceForms,
+  offerForms,
+  setOfferForms,
   dailyOpen,
   setDailyOpen,
   dailyClose,
@@ -460,6 +472,11 @@ export function WashCenterEditorForm({
         />
       </div>
 
+      <CenterOffersEditorForm
+        offerForms={offerForms}
+        setOfferForms={setOfferForms}
+      />
+
       <div className="border-t pt-4">
         <div className="mb-2 flex items-center justify-between">
           <Label>Services</Label>
@@ -527,6 +544,116 @@ export function WashCenterEditorForm({
   );
 }
 
+type OfferEditorProps = {
+  offerForms: OfferFormRow[];
+  setOfferForms: React.Dispatch<React.SetStateAction<OfferFormRow[]>>;
+};
+
+export function CenterOffersEditorForm({
+  offerForms,
+  setOfferForms,
+}: OfferEditorProps) {
+  function addOfferRow() {
+    setOfferForms((rows) => [
+      ...rows,
+      {
+        id: `off_${Math.random().toString(36).slice(2, 10)}`,
+        title: "5 washes pack",
+        washCount: 5,
+        discountPercent: 25,
+        description: "Buy 5 washes and save 25%.",
+      },
+    ]);
+  }
+
+  function updateOffer(i: number, patch: Partial<OfferFormRow>) {
+    setOfferForms((rows) =>
+      rows.map((r, j) => (j === i ? { ...r, ...patch } : r))
+    );
+  }
+
+  function removeOffer(i: number) {
+    setOfferForms((rows) => rows.filter((_, j) => j !== i));
+  }
+
+  return (
+    <div className="border-t pt-4">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <div>
+          <Label>Offer packages</Label>
+          <p className="text-xs text-muted-foreground">
+            Example: 5 washes pack, 25% off. These appear on the center page.
+          </p>
+        </div>
+        <Button type="button" variant="outline" size="sm" onClick={addOfferRow}>
+          <Plus className="mr-1 h-3.5 w-3.5" />
+          Add offer
+        </Button>
+      </div>
+      <div className="space-y-3">
+        {offerForms.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border/70 px-4 py-6 text-sm text-muted-foreground">
+            No offer packages yet. Add one if this center has a bundle or subscription deal.
+          </div>
+        ) : null}
+        {offerForms.map((offer, i) => (
+          <div
+            key={offer.id}
+            className="grid gap-2 rounded-lg border border-border/60 p-3"
+          >
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Input
+                placeholder="Offer title"
+                value={offer.title}
+                onChange={(e) => updateOffer(i, { title: e.target.value })}
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <Input
+                  type="number"
+                  min={1}
+                  placeholder="Washes"
+                  value={offer.washCount}
+                  onChange={(e) =>
+                    updateOffer(i, {
+                      washCount: Number.parseInt(e.target.value, 10) || 0,
+                    })
+                  }
+                />
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  placeholder="Discount %"
+                  value={offer.discountPercent}
+                  onChange={(e) =>
+                    updateOffer(i, {
+                      discountPercent: Number.parseFloat(e.target.value) || 0,
+                    })
+                  }
+                />
+              </div>
+            </div>
+            <Textarea
+              placeholder="Description"
+              value={offer.description}
+              onChange={(e) => updateOffer(i, { description: e.target.value })}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="w-fit text-destructive"
+              onClick={() => removeOffer(i)}
+            >
+              Remove offer
+            </Button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function serviceFormsToCenterServices(
   forms: ServiceFormRow[]
 ): WashCenter["services"] {
@@ -539,6 +666,18 @@ export function serviceFormsToCenterServices(
   }));
 }
 
+export function offerFormsToCenterOffers(
+  forms: OfferFormRow[]
+): NonNullable<OfferPackage[]> {
+  return forms.map((f) => ({
+    id: f.id,
+    title: f.title.trim(),
+    washCount: f.washCount,
+    discountPercent: f.discountPercent,
+    description: f.description.trim(),
+  }));
+}
+
 export function centerToServiceForms(c: WashCenter): ServiceFormRow[] {
   return c.services.map((s) => ({
     id: s.id,
@@ -546,5 +685,15 @@ export function centerToServiceForms(c: WashCenter): ServiceFormRow[] {
     price: s.price,
     duration: s.durationMin,
     description: s.description,
+  }));
+}
+
+export function centerToOfferForms(c: WashCenter): OfferFormRow[] {
+  return (c.offers ?? []).map((offer) => ({
+    id: offer.id,
+    title: offer.title,
+    washCount: offer.washCount,
+    discountPercent: offer.discountPercent,
+    description: offer.description ?? "",
   }));
 }

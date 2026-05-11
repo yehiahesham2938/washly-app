@@ -81,6 +81,15 @@ const carWashSeedData = [
         price: 200,
       },
     ],
+    offers: [
+      {
+        id: 'c1-o1',
+        title: '5 washes pack',
+        washCount: 5,
+        discountPercent: 25,
+        description: 'Prepay for five exterior washes and save 25%.',
+      },
+    ],
     createdAt: new Date(),
   },
   {
@@ -129,6 +138,15 @@ const carWashSeedData = [
         price: 800,
       },
     ],
+    offers: [
+      {
+        id: 'c2-o1',
+        title: 'Weekend wash bundle',
+        washCount: 3,
+        discountPercent: 15,
+        description: 'Perfect for regular city drivers who wash every weekend.',
+      },
+    ],
     createdAt: new Date(),
   },
   {
@@ -170,6 +188,15 @@ const carWashSeedData = [
         price: 1125,
       },
     ],
+    offers: [
+      {
+        id: 'c3-o1',
+        title: 'Detail saver pack',
+        washCount: 4,
+        discountPercent: 20,
+        description: 'Bundle premium finishes and save on repeat visits.',
+      },
+    ],
     createdAt: new Date(),
   },
   {
@@ -209,6 +236,15 @@ const carWashSeedData = [
         description: 'Deep vacuum and lint roll interior.',
         durationMin: 60,
         price: 1800,
+      },
+    ],
+    offers: [
+      {
+        id: 'c4-o1',
+        title: 'SUV care pack',
+        washCount: 5,
+        discountPercent: 25,
+        description: 'Designed for larger vehicles that need frequent care.',
       },
     ],
     createdAt: new Date(),
@@ -259,6 +295,15 @@ const carWashSeedData = [
         price: 3000,
       },
     ],
+    offers: [
+      {
+        id: 'c5-o1',
+        title: 'Eco loyalty bundle',
+        washCount: 6,
+        discountPercent: 18,
+        description: 'Save on repeated eco washes while keeping the planet clean.',
+      },
+    ],
     createdAt: new Date(),
   },
   {
@@ -300,6 +345,15 @@ const carWashSeedData = [
         price: 625,
       },
     ],
+    offers: [
+      {
+        id: 'c6-o1',
+        title: 'Monthly commuter pass',
+        washCount: 8,
+        discountPercent: 30,
+        description: 'Best for frequent tunnel wash customers and daily commuters.',
+      },
+    ],
     createdAt: new Date(),
   },
   {
@@ -332,6 +386,15 @@ const carWashSeedData = [
         description: 'Minor swirl removal and sealant.',
         durationMin: 180,
         price: 7000,
+      },
+    ],
+    offers: [
+      {
+        id: 'c7-o1',
+        title: 'Family van saver',
+        washCount: 5,
+        discountPercent: 20,
+        description: 'Keep the family vehicle clean with a repeat-visit discount.',
       },
     ],
     createdAt: new Date(),

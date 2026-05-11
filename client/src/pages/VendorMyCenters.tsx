@@ -5,6 +5,14 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Card,
   CardContent,
   CardDescription,
@@ -12,6 +20,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { CenterImage } from "@/components/CenterImage";
+import {
+  CenterOffersEditorForm,
+  centerToOfferForms,
+  offerFormsToCenterOffers,
+  type OfferFormRow,
+} from "@/components/centers/WashCenterEditorForm";
 import {
   Select,
   SelectContent,
@@ -29,7 +43,7 @@ import {
 } from "@/components/ui/table";
 import { formatEgp } from "@/lib/currency";
 import { fetchBookingsForMyCenters, patchBookingStatus } from "@/services/api";
-import { fetchMyVendorCenters } from "@/services/api/centers";
+import { fetchMyVendorCenters, updateCenterOffers } from "@/services/api/centers";
 import type { BookingRecord, BookingRecordStatus, WashCenter } from "@/types";
 
 const STATUSES: BookingRecordStatus[] = [
@@ -42,6 +56,10 @@ const STATUSES: BookingRecordStatus[] = [
 export function VendorMyCenters() {
   const [centers, setCenters] = useState<WashCenter[]>([]);
   const [bookings, setBookings] = useState<BookingRecord[]>([]);
+  const [offerDialogOpen, setOfferDialogOpen] = useState(false);
+  const [editingCenter, setEditingCenter] = useState<WashCenter | null>(null);
+  const [offerForms, setOfferForms] = useState<OfferFormRow[]>([]);
+  const [savingOffers, setSavingOffers] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
@@ -92,6 +110,30 @@ export function VendorMyCenters() {
       toast.success("Status updated");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not update");
+    }
+  }
+
+  function openOfferEditor(center: WashCenter) {
+    setEditingCenter(center);
+    setOfferForms(centerToOfferForms(center));
+    setOfferDialogOpen(true);
+  }
+
+  async function saveOffers() {
+    if (!editingCenter) return;
+    setSavingOffers(true);
+    try {
+      const offers = offerFormsToCenterOffers(offerForms);
+      const updated = await updateCenterOffers(editingCenter.id, offers);
+      setCenters((prev) =>
+        prev.map((x) => (x.id === updated.id ? updated : x))
+      );
+      setOfferDialogOpen(false);
+      toast.success("Offers updated");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not update offers");
+    } finally {
+      setSavingOffers(false);
     }
   }
 
@@ -157,6 +199,20 @@ export function VendorMyCenters() {
                     <CardDescription>
                       {c.area} · {c.address}
                     </CardDescription>
+                    <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                      {(c.offers?.length ?? 0) > 0 ? (
+                        c.offers!.slice(0, 2).map((offer) => (
+                          <span
+                            key={offer.id}
+                            className="rounded-full bg-muted px-2.5 py-1"
+                          >
+                            {offer.title} · {offer.discountPercent}% off
+                          </span>
+                        ))
+                      ) : (
+                        <span>No offer packages yet</span>
+                      )}
+                    </div>
                     <Button
                       variant="link"
                       className="mt-1 h-auto p-0 text-primary"
@@ -169,6 +225,13 @@ export function VendorMyCenters() {
                         View public page
                         <ExternalLink className="h-3.5 w-3.5" />
                       </Link>
+                    </Button>
+                    <Button
+                      variant="link"
+                      className="mt-1 h-auto p-0 text-primary"
+                      onClick={() => openOfferEditor(c)}
+                    >
+                      Edit offers
                     </Button>
                   </div>
                 </div>
@@ -250,6 +313,31 @@ export function VendorMyCenters() {
           );
         })}
       </div>
+
+      <Dialog open={offerDialogOpen} onOpenChange={setOfferDialogOpen}>
+        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto sm:rounded-xl">
+          <DialogHeader>
+            <DialogTitle>Edit offer packages</DialogTitle>
+            <DialogDescription>
+              Update the promotional packages shown on your public center page.
+            </DialogDescription>
+          </DialogHeader>
+
+          <CenterOffersEditorForm
+            offerForms={offerForms}
+            setOfferForms={setOfferForms}
+          />
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOfferDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={saveOffers} disabled={savingOffers}>
+              {savingOffers ? "Saving…" : "Save offers"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

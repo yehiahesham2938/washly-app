@@ -122,6 +122,7 @@ router.patch('/:id/approve', authRequired, adminOnly, async (req, res) => {
       workingDays,
       description = '',
       services = [],
+      offers = [],
     } = draft;
 
     const createPayload = {
@@ -138,6 +139,7 @@ router.patch('/:id/approve', authRequired, adminOnly, async (req, res) => {
       hoursShort: hoursShort ? String(hoursShort) : undefined,
       description: String(description),
       services,
+      offers,
       ownerUserId: reqDoc.user,
     };
 

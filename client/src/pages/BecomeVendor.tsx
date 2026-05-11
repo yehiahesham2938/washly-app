@@ -21,9 +21,11 @@ import {
 } from "@/components/ui/dialog";
 import {
   serviceFormsToCenterServices,
+  offerFormsToCenterOffers,
   WashCenterEditorForm,
 } from "@/components/centers/WashCenterEditorForm";
 import type { ServiceFormRow } from "@/components/centers/WashCenterEditorForm";
+import type { OfferFormRow } from "@/components/centers/WashCenterEditorForm";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   ALL_WEEKDAYS,
@@ -49,6 +51,7 @@ const defaultCenter = (): WashCenter => ({
   workingDays: [...ALL_WEEKDAYS],
   description: "",
   services: [],
+  offers: [],
 });
 
 export function BecomeVendor() {
@@ -56,6 +59,7 @@ export function BecomeVendor() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<WashCenter>(defaultCenter());
   const [serviceForms, setServiceForms] = useState<ServiceFormRow[]>([]);
+  const [offerForms, setOfferForms] = useState<OfferFormRow[]>([]);
   const [gallery, setGallery] = useState<string[]>([]);
   const [dailyOpen, setDailyOpen] = useState("09:00");
   const [dailyClose, setDailyClose] = useState("18:00");
@@ -68,6 +72,7 @@ export function BecomeVendor() {
     const nc = defaultCenter();
     setForm(nc);
     setServiceForms([]);
+    setOfferForms([]);
     setGallery([]);
     setDialogOpen(true);
   }
@@ -82,6 +87,7 @@ export function BecomeVendor() {
       return;
     }
     const services = serviceFormsToCenterServices(serviceForms);
+    const offers = offerFormsToCenterOffers(offerForms);
     if (workingDays.length === 0) {
       toast.error("Select at least one working day");
       return;
@@ -102,6 +108,7 @@ export function BecomeVendor() {
       hoursShort,
       workingDays: sortedDays,
       services,
+      offers,
       reviewCount: form.reviewCount || 0,
       gallery: gallery.length > 0 ? gallery : undefined,
     };
@@ -218,6 +225,8 @@ export function BecomeVendor() {
             setForm={setForm}
             serviceForms={serviceForms}
             setServiceForms={setServiceForms}
+            offerForms={offerForms}
+            setOfferForms={setOfferForms}
             dailyOpen={dailyOpen}
             setDailyOpen={setDailyOpen}
             dailyClose={dailyClose}

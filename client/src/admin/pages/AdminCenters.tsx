@@ -25,10 +25,13 @@ import {
 } from "@/components/ui/dialog";
 import {
   centerToServiceForms,
+  centerToOfferForms,
+  offerFormsToCenterOffers,
   serviceFormsToCenterServices,
   WashCenterEditorForm,
 } from "@/components/centers/WashCenterEditorForm";
 import type { ServiceFormRow } from "@/components/centers/WashCenterEditorForm";
+import type { OfferFormRow } from "@/components/centers/WashCenterEditorForm";
 import { CenterImage } from "@/components/CenterImage";
 import { useCenters } from "@/contexts/CentersContext";
 import {
@@ -54,6 +57,7 @@ const defaultCenter = (): WashCenter => ({
   workingDays: [...ALL_WEEKDAYS],
   description: "",
   services: [],
+  offers: [],
 });
 
 export function AdminCenters() {
@@ -62,6 +66,7 @@ export function AdminCenters() {
   const [editing, setEditing] = useState<WashCenter | null>(null);
   const [form, setForm] = useState<WashCenter>(defaultCenter());
   const [serviceForms, setServiceForms] = useState<ServiceFormRow[]>([]);
+  const [offerForms, setOfferForms] = useState<OfferFormRow[]>([]);
   const [gallery, setGallery] = useState<string[]>([]);
   const [dailyOpen, setDailyOpen] = useState("09:00");
   const [dailyClose, setDailyClose] = useState("18:00");
@@ -76,6 +81,7 @@ export function AdminCenters() {
     const nc = defaultCenter();
     setForm(nc);
     setServiceForms([]);
+    setOfferForms([]);
     setGallery([]);
     setDialogOpen(true);
   }
@@ -84,6 +90,7 @@ export function AdminCenters() {
     setEditing(c);
     setForm({ ...c });
     setServiceForms(centerToServiceForms(c));
+    setOfferForms(centerToOfferForms(c));
     setGallery(c.gallery?.length ? [...c.gallery] : []);
     setDialogOpen(true);
   }
@@ -98,6 +105,7 @@ export function AdminCenters() {
       return;
     }
     const services = serviceFormsToCenterServices(serviceForms);
+    const offers = offerFormsToCenterOffers(offerForms);
     if (workingDays.length === 0) {
       toast.error("Select at least one working day");
       return;
@@ -118,6 +126,7 @@ export function AdminCenters() {
       hoursShort,
       workingDays: sortedDays,
       services,
+      offers,
       reviewCount: form.reviewCount || 0,
       gallery: gallery.length > 0 ? gallery : undefined,
     };
@@ -245,6 +254,8 @@ export function AdminCenters() {
             setForm={setForm}
             serviceForms={serviceForms}
             setServiceForms={setServiceForms}
+            offerForms={offerForms}
+            setOfferForms={setOfferForms}
             dailyOpen={dailyOpen}
             setDailyOpen={setDailyOpen}
             dailyClose={dailyClose}

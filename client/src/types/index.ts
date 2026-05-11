@@ -14,6 +14,14 @@ export interface Service {
   price: number;
 }
 
+export interface OfferPackage {
+  id: string;
+  title: string;
+  washCount: number;
+  discountPercent: number;
+  description?: string;
+}
+
 /** Open days for the center (same open/close window on each). */
 export type Weekday =
   | "Mon"
@@ -44,6 +52,8 @@ export interface WashCenter {
   /** Detail page blurb */
   description?: string;
   services: Service[];
+  /** Promotional package offers for this center. */
+  offers?: OfferPackage[];
   /** Extra photos (e.g. vendor submissions). */
   gallery?: string[];
   /** Present when this listing was published from an approved vendor request. */

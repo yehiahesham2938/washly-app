@@ -25,6 +25,18 @@ const serviceSchema = new mongoose.Schema(
   { _id: false }
 );
 
+/** Matches client `OfferPackage` */
+const offerSchema = new mongoose.Schema(
+  {
+    id: { type: String, required: true },
+    title: { type: String, required: true, trim: true },
+    washCount: { type: Number, required: true, min: 1 },
+    discountPercent: { type: Number, required: true, min: 0, max: 100 },
+    description: { type: String, default: '' },
+  },
+  { _id: false }
+);
+
 /** Matches client `WashCenter` (id is stored as string _id for parity with the app) */
 const carWashSchema = new mongoose.Schema(
   {
@@ -51,6 +63,7 @@ const carWashSchema = new mongoose.Schema(
     },
     description: { type: String, trim: true, default: '' },
     services: { type: [serviceSchema], default: [] },
+    offers: { type: [offerSchema], default: [] },
     /** Set when a vendor request is approved; admin-created centers omit this. */
     ownerUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     /** Extra photos beyond `image` (data URLs or remote URLs). */

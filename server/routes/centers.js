@@ -1,6 +1,7 @@
 const { randomBytes } = require('crypto');
 const express = require('express');
 const CarWash = require('../models/CarWash');
+const User = require('../models/User');
 const { authRequired } = require('../middleware/auth');
 const { adminOnly } = require('../middleware/admin');
 
@@ -8,6 +9,65 @@ const router = express.Router();
 
 function newCenterId() {
   return `c_${randomBytes(5).toString('hex')}`;
+}
+
+function newOfferId() {
+  return `offer_${randomBytes(5).toString('hex')}`;
+}
+
+function normalizeOffers(value) {
+  if (value === undefined) return undefined;
+  if (!Array.isArray(value)) return { error: 'Offers must be an array' };
+
+  const offers = [];
+  for (const rawOffer of value) {
+    if (!rawOffer || typeof rawOffer !== 'object') {
+      return { error: 'Invalid offer entry' };
+    }
+    const title = String(rawOffer.title ?? '').trim();
+    if (!title) return { error: 'Offer title is required' };
+
+    const washCount = Number(rawOffer.washCount);
+    if (!Number.isFinite(washCount) || washCount < 1) {
+      return { error: 'Offer wash count must be at least 1' };
+    }
+
+    const discountPercent = Number(rawOffer.discountPercent);
+    if (
+      !Number.isFinite(discountPercent) ||
+      discountPercent < 0 ||
+      discountPercent > 100
+    ) {
+      return { error: 'Offer discount must be between 0 and 100' };
+    }
+
+    offers.push({
+      id:
+        rawOffer.id && String(rawOffer.id).trim()
+          ? String(rawOffer.id).trim()
+          : newOfferId(),
+      title,
+      washCount,
+      discountPercent,
+      description:
+        rawOffer.description !== undefined
+          ? String(rawOffer.description).trim()
+          : '',
+    });
+  }
+
+  return { value: offers };
+}
+
+async function canEditCenter(req, center) {
+  if (req.userRole === 'admin') return true;
+  try {
+    const user = await User.findById(req.userId).select('role');
+    if (user?.role === 'admin') return true;
+  } catch {
+    // fall through
+  }
+  return center.ownerUserId?.toString() === String(req.userId);
 }
 
 function formatCenter(doc) {
@@ -64,6 +124,7 @@ router.post('/', authRequired, adminOnly, async (req, res) => {
       workingDays,
       description = '',
       services = [],
+      offers,
       gallery,
     } = body;
 
@@ -91,6 +152,13 @@ router.post('/', authRequired, adminOnly, async (req, res) => {
       description: String(description),
       services,
     };
+    const normalizedOffers = normalizeOffers(offers);
+    if (normalizedOffers?.error) {
+      return res.status(400).json({ message: normalizedOffers.error });
+    }
+    if (normalizedOffers?.value !== undefined) {
+      createPayload.offers = normalizedOffers.value;
+    }
     if (Array.isArray(workingDays) && workingDays.length > 0) {
       createPayload.workingDays = workingDays;
     }
@@ -128,6 +196,7 @@ router.put('/:id', authRequired, adminOnly, async (req, res) => {
       workingDays,
       description,
       services,
+      offers,
       gallery,
     } = body;
 
@@ -147,6 +216,13 @@ router.put('/:id', authRequired, adminOnly, async (req, res) => {
     }
     if (description !== undefined) update.description = String(description);
     if (services !== undefined) update.services = services;
+    if (offers !== undefined) {
+      const normalizedOffers = normalizeOffers(offers);
+      if (normalizedOffers?.error) {
+        return res.status(400).json({ message: normalizedOffers.error });
+      }
+      update.offers = normalizedOffers.value ?? [];
+    }
     if (gallery !== undefined) {
       update.gallery = Array.isArray(gallery) && gallery.length > 0 ? gallery : [];
     }
@@ -163,6 +239,31 @@ router.put('/:id', authRequired, adminOnly, async (req, res) => {
       return res.status(400).json({ message: err.message });
     }
     return res.status(500).json({ message: 'Failed to update center' });
+  }
+});
+
+router.patch('/:id/offers', authRequired, async (req, res) => {
+  try {
+    const doc = await CarWash.findById(req.params.id);
+    if (!doc) return res.status(404).json({ message: 'Center not found' });
+    if (!(await canEditCenter(req, doc))) {
+      return res.status(403).json({ message: 'You can only edit your own center' });
+    }
+
+    const normalizedOffers = normalizeOffers(req.body?.offers);
+    if (normalizedOffers?.error) {
+      return res.status(400).json({ message: normalizedOffers.error });
+    }
+
+    doc.offers = normalizedOffers?.value ?? [];
+    await doc.save();
+    return res.json(formatCenter(doc));
+  } catch (err) {
+    console.error(err);
+    if (err.name === 'ValidationError') {
+      return res.status(400).json({ message: err.message });
+    }
+    return res.status(500).json({ message: 'Failed to update center offers' });
   }
 });
 

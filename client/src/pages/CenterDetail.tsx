@@ -51,6 +51,7 @@ export function CenterDetail() {
   const rating = center.rating ?? 0;
   const reviewCount = center.reviewCount ?? 0;
   const services = center.services ?? [];
+  const offers = center.offers ?? [];
   const minPrice = lowestServicePriceForServices(services);
 
   return (
@@ -159,6 +160,40 @@ export function CenterDetail() {
             {blurb}
           </p>
         </div>
+
+        <h2 className="mt-14 text-xl font-semibold tracking-tight">
+          Offer Packages
+        </h2>
+        {offers.length === 0 ? (
+          <p className="mt-4 text-sm text-muted-foreground">
+            No package offers listed for this center yet.
+          </p>
+        ) : (
+          <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {offers.map((offer) => (
+              <Card
+                key={offer.id}
+                className="rounded-xl border-border/60 shadow-[0_8px_30px_rgba(0,0,0,0.04)]"
+              >
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base font-semibold">
+                    {offer.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Buy {offer.washCount} washes and get {offer.discountPercent}% off.
+                  </p>
+                  {offer.description ? (
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                      {offer.description}
+                    </p>
+                  ) : null}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
         <h2 className="mt-14 text-xl font-semibold tracking-tight">
           Available Services

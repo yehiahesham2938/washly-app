@@ -25,6 +25,16 @@ export async function updateCenter(center: WashCenter): Promise<WashCenter> {
   });
 }
 
+export async function updateCenterOffers(
+  id: string,
+  offers: NonNullable<WashCenter["offers"]>
+): Promise<WashCenter> {
+  return getJSON<WashCenter>(`/api/centers/${encodeURIComponent(id)}/offers`, {
+    method: "PATCH",
+    body: JSON.stringify({ offers }),
+  });
+}
+
 export async function deleteCenter(id: string): Promise<void> {
   await getJSON(`/api/centers/${encodeURIComponent(id)}`, { method: "DELETE" });
 }
