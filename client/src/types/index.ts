@@ -89,6 +89,8 @@ export type BookingRecordStatus =
   | "completed"
   | "cancelled";
 
+export type BookingPaymentMethod = "cash" | "card" | "visa" | "wallet";
+
 export interface BookingRecord {
   id: string;
   userId: string;
@@ -104,6 +106,7 @@ export interface BookingRecord {
   notes?: string;
   address?: string;
   price: number;
+  paymentMethod?: BookingPaymentMethod;
   status: BookingRecordStatus;
   createdAt: string;
 }

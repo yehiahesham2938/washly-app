@@ -1,195 +1,124 @@
-import { useMemo } from "react";
-import { format, parseISO } from "date-fns";
-import { Banknote, Sparkles, TrendingUp, Users, Warehouse } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { AlertTriangle, Building2, ChartNoAxesCombined } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CentersRevenueTable } from "@/admin/components/CentersRevenueTable";
+import { HomeServiceRevenue } from "@/admin/components/HomeServiceRevenue";
+import { RevenueCards } from "@/admin/components/RevenueCards";
+import { RevenueCharts } from "@/admin/components/RevenueCharts";
+import { RevenueFilters } from "@/admin/components/RevenueFilters";
+import {
+  buildRevenueAnalytics,
+  type RevenueFilter,
+} from "@/admin/components/revenueAnalytics";
 import { useAuth } from "@/contexts/AuthContext";
-import { formatEgp } from "@/lib/currency";
-import { useCenters } from "@/contexts/CentersContext";
-import type { BookingRecord } from "@/types";
-
-function StatCard({
-  title,
-  value,
-  icon: Icon,
-}: {
-  title: string;
-  value: string | number;
-  icon: typeof Users;
-}) {
-  return (
-    <Card className="rounded-xl border-border/60 shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
-          {title}
-        </CardTitle>
-        <Icon className="h-4 w-4 text-primary" />
-      </CardHeader>
-      <CardContent>
-        <p className="text-2xl font-bold tracking-tight">{value}</p>
-      </CardContent>
-    </Card>
-  );
-}
-
-function recentLabel(b: BookingRecord) {
-  try {
-    return format(parseISO(b.createdAt), "MMM d, yyyy · HH:mm");
-  } catch {
-    return b.createdAt;
-  }
-}
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function AdminDashboard() {
-  const { allBookingRecords, allUsers } = useAuth();
-  const { centers } = useCenters();
+  const { allBookingRecords, adminDataLoading, refreshAdminData } = useAuth();
+  const [filter, setFilter] = useState<RevenueFilter>("month");
 
-  const revenue = useMemo(
-    () => allBookingRecords.reduce((s, b) => s + b.price, 0),
-    [allBookingRecords]
+  // Re-fetch on every visit so paymentMethod and status are always current.
+  useEffect(() => {
+    refreshAdminData();
+  }, [refreshAdminData]);
+
+  const analytics = useMemo(
+    () => buildRevenueAnalytics(allBookingRecords, filter),
+    [allBookingRecords, filter]
   );
 
-  const recent = useMemo(() => {
-    return [...allBookingRecords]
-      .sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      )
-      .slice(0, 5);
-  }, [allBookingRecords]);
-
-  const confirmedShare =
-    allBookingRecords.length === 0
-      ? 0
-      : Math.round(
-          (allBookingRecords.filter((b) => b.status === "confirmed").length /
-            allBookingRecords.length) *
-            100
-        );
+  const showEmptyState = !adminDataLoading && analytics.filteredCompletedCount === 0;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-7">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
+        <h2 className="text-2xl font-bold tracking-tight">
+          Admin Revenue Analytics
+        </h2>
         <p className="text-muted-foreground">
-          Overview of your Washly platform
+          Advanced business insights for centers and home service bookings.
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          title="Total Centers"
-          value={centers.length}
-          icon={Warehouse}
-        />
-        <StatCard title="Total Users" value={allUsers.length} icon={Users} />
-        <StatCard
-          title="Total Bookings"
-          value={allBookingRecords.length}
-          icon={Sparkles}
-        />
-        <StatCard
-          title="Revenue"
-          value={formatEgp(revenue)}
-          icon={Banknote}
-        />
+      <div className="rounded-2xl border border-border/60 bg-card/60 p-4 shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold tracking-wide text-muted-foreground">
+            Time Filter
+          </h3>
+          <ChartNoAxesCombined className="h-4 w-4 text-primary" />
+        </div>
+        <RevenueFilters value={filter} onChange={setFilter} />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="rounded-xl border-border/60 shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <TrendingUp className="h-4 w-4 text-primary" />
-              Booking pipeline
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <div className="mb-1 flex justify-between text-xs text-muted-foreground">
-                <span>Confirmed share</span>
-                <span>{confirmedShare}%</span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full bg-gradient-primary transition-all"
-                  style={{ width: `${confirmedShare}%` }}
-                />
-              </div>
-            </div>
-            <div>
-              <div className="mb-1 flex justify-between text-xs text-muted-foreground">
-                <span>Completed</span>
-                <span>
-                  {
-                    allBookingRecords.filter((b) => b.status === "completed")
-                      .length
-                  }
-                </span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full bg-emerald-500/80"
-                  style={{
-                    width: `${
-                      allBookingRecords.length
-                        ? Math.round(
-                            (allBookingRecords.filter(
-                              (b) => b.status === "completed"
-                            ).length /
-                              allBookingRecords.length) *
-                              100
-                          )
-                        : 0
-                    }%`,
-                  }}
-                />
-              </div>
-            </div>
+      {adminDataLoading ? (
+        <div className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-[116px] rounded-2xl" />
+            ))}
+          </div>
+          <Skeleton className="h-[360px] rounded-xl" />
+          <Skeleton className="h-[320px] rounded-xl" />
+        </div>
+      ) : showEmptyState ? (
+        <Card className="rounded-xl border border-dashed border-border">
+          <CardContent className="flex min-h-[220px] flex-col items-center justify-center gap-2 text-center">
+            <Building2 className="h-10 w-10 text-muted-foreground" />
+            <p className="text-lg font-semibold">No completed bookings in this range</p>
+            <p className="text-sm text-muted-foreground">
+              Revenue analytics update automatically when bookings move to
+              <span className="mx-1 rounded bg-muted px-1.5 py-0.5 font-medium text-foreground">
+                completed
+              </span>
+              status.
+            </p>
           </CardContent>
         </Card>
+      ) : (
+        <>
+          <RevenueCards
+            centerCashRevenue={analytics.centerCashRevenue}
+            centerEPaymentRevenue={analytics.centerEPaymentRevenue}
+            homeRevenue={analytics.homeRevenue}
+          />
 
-        <Card className="rounded-xl border-border/60 shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
-          <CardHeader>
-            <CardTitle className="text-base">Recent bookings</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {recent.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No bookings yet.</p>
-            ) : (
-              <ul className="space-y-3">
-                {recent.map((b) => (
-                  <li
-                    key={b.id}
-                    className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-sm"
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="font-medium">{b.serviceName}</span>
-                      <Badge
-                        variant={
-                          b.status === "pending"
-                            ? "warning"
-                            : b.status === "completed"
-                              ? "success"
-                              : b.status === "cancelled"
-                                ? "destructive"
-                                : "default"
-                        }
-                        className="capitalize"
-                      >
-                        {b.status}
-                      </Badge>
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      {b.userEmail} · {recentLabel(b)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+          {analytics.totalUnknownRevenue > 0 ? (
+            <Card className="rounded-xl border-amber-300/60 bg-amber-50/70 dark:border-amber-900/50 dark:bg-amber-950/20">
+              <CardContent className="flex items-start gap-2 p-4 text-sm">
+                <AlertTriangle className="mt-0.5 h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <p className="text-amber-900 dark:text-amber-100">
+                  {`Some completed bookings (${analytics.totalUnknownRevenue.toLocaleString()} EGP) have no saved payment method, so they are excluded from Cash/Visa/Wallet split to keep the dashboard data fully accurate.`}
+                </p>
+              </CardContent>
+            </Card>
+          ) : null}
+
+          <section className="space-y-4">
+            <div className="space-y-1">
+              <h3 className="text-xl font-semibold tracking-tight">Centers Revenue</h3>
+              <p className="text-sm text-muted-foreground">
+                Platform Revenue from centers = 20% of completed bookings revenue. Centers keep 80%.
+              </p>
+            </div>
+            <CentersRevenueTable rows={analytics.centersRows} />
+          </section>
+
+          <RevenueCharts
+            centerData={analytics.centerChartData}
+            paymentBreakdown={analytics.paymentBreakdown}
+            trendData={analytics.trendData}
+          />
+
+          <HomeServiceRevenue
+            totalRevenue={analytics.homeRevenue}
+            completedBookings={analytics.homeCompletedBookings}
+            cashRevenue={analytics.homeCashRevenue}
+            visaRevenue={analytics.homeVisaRevenue}
+            walletRevenue={analytics.homeWalletRevenue}
+          />
+        </>
+      )}
     </div>
   );
 }

@@ -28,6 +28,7 @@ import type { Booking, BookingRecord, User, UserRole } from "@/types";
 
 type AuthContextValue = {
   authReady: boolean;
+  adminDataLoading: boolean;
   user: User | null;
   allUsers: User[];
   bookings: Booking[];
@@ -55,6 +56,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [authReady, setAuthReady] = useState(false);
+  const [adminDataLoading, setAdminDataLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [bookingRecords, setBookingRecords] = useState<BookingRecord[]>([]);
   const [allBookingRecords, setAllBookingRecords] = useState<BookingRecord[]>([]);
@@ -77,8 +79,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!getStoredToken()) {
       setAllBookingRecords([]);
       setAllUsers([]);
+      setAdminDataLoading(false);
       return;
     }
+    setAdminDataLoading(true);
     try {
       const [bookings, users] = await Promise.all([
         fetchAllBookings(),
@@ -89,6 +93,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       setAllBookingRecords([]);
       setAllUsers([]);
+    } finally {
+      setAdminDataLoading(false);
     }
   }, []);
 
@@ -123,6 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setBookingRecords([]);
       setAllBookingRecords([]);
       setAllUsers([]);
+      setAdminDataLoading(false);
       return;
     }
     let cancelled = false;
@@ -170,6 +177,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setBookingRecords([]);
     setAllBookingRecords([]);
     setAllUsers([]);
+    setAdminDataLoading(false);
   }, []);
 
   const addBooking = useCallback(
@@ -215,12 +223,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateBookingStatus = useCallback(
     async (id: string, status: BookingRecord["status"]) => {
-      await patchBookingStatus(id, status);
+      // Use the full record returned by the server so fields like
+      // paymentMethod are never lost or left as undefined in state.
+      const updated = await patchBookingStatus(id, status);
       setAllBookingRecords((prev) =>
-        prev.map((b) => (b.id === id ? { ...b, status } : b))
+        prev.map((b) => (b.id === id ? updated : b))
       );
       setBookingRecords((prev) =>
-        prev.map((b) => (b.id === id ? { ...b, status } : b))
+        prev.map((b) => (b.id === id ? updated : b))
       );
     },
     []
@@ -248,6 +258,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       authReady,
+      adminDataLoading,
       user,
       allUsers,
       bookings,
@@ -265,6 +276,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }),
     [
       authReady,
+      adminDataLoading,
       user,
       allUsers,
       bookings,

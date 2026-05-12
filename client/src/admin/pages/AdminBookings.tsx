@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -30,6 +31,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/contexts/AuthContext";
+import { bookingPaymentLabel } from "@/lib/bookingPayments";
 import { formatEgp } from "@/lib/currency";
 import type { BookingRecord, BookingRecordStatus } from "@/types";
 
@@ -42,6 +44,12 @@ const STATUSES: BookingRecordStatus[] = [
 
 function isHomeBooking(b: BookingRecord): boolean {
   return b.kind === "home";
+}
+
+function paymentBadgeVariant(label: string): "warning" | "default" | "outline" {
+  if (label === "Cash") return "warning";
+  if (label === "Visa") return "default";
+  return "outline";
 }
 
 export function AdminBookings() {
@@ -122,6 +130,7 @@ export function AdminBookings() {
                       <TableHead>Date</TableHead>
                       <TableHead>Time</TableHead>
                       <TableHead>Price</TableHead>
+                      <TableHead>Payment</TableHead>
                       <TableHead className="min-w-[200px] max-w-[280px]">
                         Client notes
                       </TableHead>
@@ -140,6 +149,13 @@ export function AdminBookings() {
                         <TableCell>{b.date}</TableCell>
                         <TableCell>{b.time}</TableCell>
                         <TableCell>{formatEgp(b.price)}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={paymentBadgeVariant(bookingPaymentLabel(b))}
+                          >
+                            {bookingPaymentLabel(b)}
+                          </Badge>
+                        </TableCell>
                         <TableCell className="align-top text-sm">
                           {b.notes?.trim() ? (
                             <p
@@ -242,6 +258,7 @@ export function AdminBookings() {
                       <TableHead>Date</TableHead>
                       <TableHead>Time</TableHead>
                       <TableHead>Price</TableHead>
+                      <TableHead>Payment</TableHead>
                       <TableHead className="min-w-[200px] max-w-[280px]">
                         Client notes
                       </TableHead>
@@ -271,6 +288,13 @@ export function AdminBookings() {
                         <TableCell>{b.date}</TableCell>
                         <TableCell>{b.time}</TableCell>
                         <TableCell>{formatEgp(b.price)}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={paymentBadgeVariant(bookingPaymentLabel(b))}
+                          >
+                            {bookingPaymentLabel(b)}
+                          </Badge>
+                        </TableCell>
                         <TableCell className="align-top text-sm">
                           {b.notes?.trim() ? (
                             <p

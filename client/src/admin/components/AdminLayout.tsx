@@ -13,6 +13,7 @@ const mobileLinks = [
   { to: "/admin/dashboard", label: "Dashboard" },
   { to: "/admin/centers", label: "Centers" },
   { to: "/admin/bookings", label: "Bookings" },
+  { to: "/admin/home-packages", label: "Home Pkgs" },
   { to: "/admin/users", label: "Users" },
 ] as const;
 

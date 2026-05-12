@@ -17,6 +17,7 @@ function bookingToRecord(doc) {
     notes: o.notes,
     address: o.address,
     price: o.price,
+    paymentMethod: o.paymentMethod,
     status: o.status,
     createdAt:
       o.createdAt instanceof Date ? o.createdAt.toISOString() : String(o.createdAt),

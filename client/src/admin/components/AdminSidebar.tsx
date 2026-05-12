@@ -3,6 +3,7 @@ import {
   Building2,
   CalendarCheck,
   ClipboardList,
+  House,
   LayoutDashboard,
   LogOut,
   Users,
@@ -18,6 +19,7 @@ const items = [
   { to: "/admin/centers", label: "Centers", icon: Building2 },
   { to: "/admin/vendor-requests", label: "Vendor requests", icon: ClipboardList },
   { to: "/admin/bookings", label: "Bookings", icon: CalendarCheck },
+  { to: "/admin/home-packages", label: "Home Packages", icon: House },
   { to: "/admin/users", label: "Users", icon: Users },
 ] as const;
 

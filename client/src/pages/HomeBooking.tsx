@@ -383,12 +383,6 @@ export function HomeBooking() {
         <Button type="submit" size="lg" className="w-full">
           Schedule Home Wash — {formatEgp(price)}
         </Button>
-        <p className="text-center text-xs text-muted-foreground">
-          Need an account?{" "}
-          <Link to="/signup" className="text-primary hover:underline">
-            Sign up
-          </Link>
-        </p>
       </form>
     </div>
   );

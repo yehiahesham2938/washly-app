@@ -21,7 +21,7 @@ function signToken(userId, role) {
 
 function formatUser(doc) {
     const o = doc && typeof doc.toObject === 'function' ? doc.toObject() : doc;
-    const id = o._id ? ? o.id;
+    const id = o._id ?? o.id;
     return {
         id: id != null ? String(id) : '',
         name: o.name,
@@ -79,8 +79,8 @@ function validationMessages(err) {
 router.post('/register', async(req, res) => {
     try {
         if (!ensureJwtSecret(res)) return;
-        const { name, email, phone, password } = req.body ? ? {};
-        if (!name ? .trim() || !email ? .trim() || !phone ? .trim() || !password) {
+        const { name, email, phone, password } = req.body ?? {};
+        if (!name?.trim() || !email?.trim() || !phone?.trim() || !password) {
             return res.status(400).json({ message: 'Name, email, phone, and password are required' });
         }
         if (String(password).length < 6) {
@@ -134,8 +134,8 @@ router.post('/register', async(req, res) => {
 router.post('/login', async(req, res) => {
     try {
         if (!ensureJwtSecret(res)) return;
-        const { email, password } = req.body ? ? {};
-        if (!email ? .trim() || !password) {
+        const { email, password } = req.body ?? {};
+        if (!email?.trim() || !password) {
             return res.status(400).json({ message: 'Email and password are required' });
         }
         const emailNorm = String(email).trim().toLowerCase();

@@ -5,6 +5,7 @@ import { AdminRoute } from "@/admin/components/AdminRoute";
 import { AdminBookings } from "@/admin/pages/AdminBookings";
 import { AdminCenters } from "@/admin/pages/AdminCenters";
 import { AdminDashboard } from "@/admin/pages/AdminDashboard";
+import { AdminHomePackages } from "@/admin/pages/AdminHomePackages";
 import { AdminUsers } from "@/admin/pages/AdminUsers";
 import { AdminVendorRequests } from "@/admin/pages/AdminVendorRequests";
 import { Layout } from "@/components/layout/Layout";
@@ -51,6 +52,7 @@ export default function App() {
           <Route path="centers" element={<AdminCenters />} />
           <Route path="vendor-requests" element={<AdminVendorRequests />} />
           <Route path="bookings" element={<AdminBookings />} />
+          <Route path="home-packages" element={<AdminHomePackages />} />
           <Route path="users" element={<AdminUsers />} />
         </Route>
       </Route>
