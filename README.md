@@ -395,7 +395,6 @@ For issues, questions, or suggestions, please:
 
 <div align="center">
 
-**Made with ❤️ by [Yehia Hesham](https://github.com/yehiahesham2938)**
 
 **[⬆ Back to top](#washly---professional-car-wash--home-service-booking-platform)**
 
